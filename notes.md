@@ -1,6 +1,7 @@
 # CS 260 Notes
 
 This file represents what I have learned about web programming.
+I love web programming
 
 - [My startup](https://startup.cs260.click)
 - [My simon](https://simon.cs260.click)
