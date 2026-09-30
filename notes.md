@@ -23,6 +23,18 @@ Interesting things I have learned about HTML
 
 Interesting things I have learned about React
 
-## Modification
+## Beginning: Pushing and Pulling
 
-This is a modification.
+Github:
+- Pull requests: take changes from another branch into the main branch
+- No pushing
+
+VS Code:
+- Pull: from the cloud to your computer
+- Push: from your computer to the cloud
+
+## First steps:
+
+Made a repository in Git and clone it in VS Code:
+Forked path/branch button. "Clone from remote source". Give URL, select folder, etc.
+This pulls it down to your computer.
