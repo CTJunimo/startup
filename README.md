@@ -16,16 +16,7 @@ I’m making a tic‑tac‑toe game that starts simple but has a fun twist. The 
 
 ### Design
 
-![Design image](placeholder.png)
-
-<img width="437" height="371" alt="startup_image" src="https://github.com/user-attachments/assets/664562a8-bac2-4d4d-892f-e123962b53bf" />
-
-```mermaid
-sequenceDiagram
-    actor You
-    actor Website
-    You->>Website: Replace this with your design
-```
+![Design image]<img width="437" height="371" alt="startup_image" src="https://github.com/user-attachments/assets/664562a8-bac2-4d4d-892f-e123962b53bf" />
 
 ### Key features
 
