@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Choose a game | Tic-Tac-Toe</title>
+  </head>
+  <body>
+    <header>
+      <h1>Tic-Tac-Toe</h1>
+      <nav aria-label="Main navigation">
+        <menu>
+          <li><a href="index.html">Sign in</a></li>
+          <li><a href="bots.html" aria-current="page">New game</a></li>
+          <li><a href="play.html">Game board</a></li>
+          <li><a href="scores.html">Match history</a></li>
+        </menu>
+      </nav>
+    </header>
+
+    <main>
+      <h2>Choose your opponent</h2>
+      <form action="play.html" method="get">
+        <fieldset>
+          <legend>Game mode</legend>
+          <p>
+            <input id="bot-mode" name="mode" type="radio" value="bot" checked />
+            <label for="bot-mode">Play against a bot</label>
+          </p>
+          <p>
+            <input id="multiplayer-mode" name="mode" type="radio" value="multiplayer" />
+            <label for="multiplayer-mode">Play against another person online</label>
+          </p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Bot</legend>
+          <p>
+            <label for="bot">Choose a personality</label>
+            <select id="bot" name="bot">
+              <option value="nova">Nova - bold and competitive</option>
+              <option value="milo">Milo - friendly and relaxed</option>
+              <option value="sage">Sage - thoughtful strategist</option>
+            </select>
+          </p>
+          <p>
+            <label for="difficulty">Difficulty</label>
+            <select id="difficulty" name="difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </p>
+        </fieldset>
+
+        <section aria-labelledby="profile-heading">
+          <h3 id="profile-heading">Player profile image</h3>
+          <figure>
+            <img src="https://placehold.co/120x120?text=Player" alt="Placeholder player profile image" />
+            <figcaption>This image will be replaced with a random image from the third-party API.</figcaption>
+          </figure>
+          <p><a href="https://api.api-ninjas.com/v1/randomimage">Random image API</a></p>
+        </section>
+
+        <button type="submit">Start game</button>
+      </form>
+    </main>
+
+    <footer>
+      <p><a href="scores.html">View match history</a></p>
+    </footer>
+  </body>
+</html>

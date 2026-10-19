@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Play | Tic-Tac-Toe</title>
+	</head>
+	<body>
+		<header>
+			<h1>Tic-Tac-Toe</h1>
+			<nav aria-label="Main navigation">
+				<menu>
+					<li><a href="index.html">Sign in</a></li>
+					<li><a href="bots.html">New game</a></li>
+					<li><a href="play.html" aria-current="page">Game board</a></li>
+					<li><a href="scores.html">Match history</a></li>
+				</menu>
+			</nav>
+		</header>
+
+		<main>
+			<h2>Your match</h2>
+			<section aria-label="Players">
+				<p><strong>You (X)</strong> versus <strong>Nova (O)</strong></p>
+				<p>Nova: "Let's see what you've got!"</p>
+			</section>
+
+			<section aria-label="Game status">
+				<p><label for="turn">Current turn</label> <output id="turn">Your turn (X)</output></p>
+				<p><label for="result">Result</label> <output id="result">In progress</output></p>
+			</section>
+
+			<table>
+				<caption>Tic-tac-toe game board</caption>
+				<tbody>
+					<tr>
+						<td><button type="button" aria-label="Row 1, column 1: X">X</button></td>
+						<td><button type="button" aria-label="Row 1, column 2: empty">2</button></td>
+						<td><button type="button" aria-label="Row 1, column 3: empty">3</button></td>
+					</tr>
+					<tr>
+						<td><button type="button" aria-label="Row 2, column 1: empty">4</button></td>
+						<td><button type="button" aria-label="Row 2, column 2: O">O</button></td>
+						<td><button type="button" aria-label="Row 2, column 3: empty">6</button></td>
+					</tr>
+					<tr>
+						<td><button type="button" aria-label="Row 3, column 1: empty">7</button></td>
+						<td><button type="button" aria-label="Row 3, column 2: empty">8</button></td>
+						<td><button type="button" aria-label="Row 3, column 3: empty">9</button></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p>
+				<button type="button">Restart match</button>
+				<a href="bots.html">Change opponent</a>
+			</p>
+
+			<section aria-labelledby="updates-heading">
+				<h3 id="updates-heading">Live match updates</h3>
+				<ul id="live-updates" aria-live="polite">
+					<li>Waiting for match updates. Multiplayer moves and player reactions will appear here.</li>
+				</ul>
+			</section>
+		</main>
+
+		<footer>
+			<p><a href="scores.html">View match history</a></p>
+		</footer>
+	</body>
+</html>

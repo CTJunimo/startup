@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Sign in | Tic-Tac-Toe</title>
+	</head>
+	<body>
+		<header>
+			<h1>Tic-Tac-Toe</h1>
+			<nav aria-label="Main navigation">
+				<menu>
+					<li><a href="index.html" aria-current="page">Sign in</a></li>
+					<li><a href="bots.html">New game</a></li>
+					<li><a href="play.html">Game board</a></li>
+					<li><a href="scores.html">Match history</a></li>
+				</menu>
+			</nav>
+		</header>
+
+		<main>
+			<h2>Welcome back</h2>
+			<p>Sign in to play tic-tac-toe and keep track of your matches.</p>
+			<form action="/api/auth/login" method="post">
+				<fieldset>
+					<legend>Account</legend>
+					<p>
+						<label for="email">Email</label>
+						<input id="email" name="email" type="email" autocomplete="email" required />
+					</p>
+					<p>
+						<label for="password">Password</label>
+						<input id="password" name="password" type="password" autocomplete="current-password" required />
+					</p>
+					<button type="submit">Sign in</button>
+					<a href="bots.html">Create an account</a>
+				</fieldset>
+			</form>
+			<p>Account registration and sign-in will be connected to the service.</p>
+		</main>
+
+		<footer>
+			<p>Tic-Tac-Toe</p>
+		</footer>
+	</body>
+</html>
