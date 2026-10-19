@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 while getopts k:h:s: flag
 do
     case "${flag}" in
@@ -17,6 +19,9 @@ fi
 
 printf "\n----> Deploying files for $service to $hostname with $key\n"
 
+# Build before replacing the currently deployed application.
+npm run build
+
 # Step 1
 printf "\n----> Clear out the previous distribution on the target.\n"
 ssh -i "$key" ubuntu@$hostname << ENDSSH
@@ -25,5 +30,5 @@ mkdir -p services/${service}/public
 ENDSSH
 
 # Step 2
-printf "\n----> Copy the distribution package to the target.\n"
-scp -r -i "$key" * ubuntu@$hostname:services/$service/public
+printf "\n----> Copy the Vite build to the target.\n"
+scp -r -i "$key" dist/* ubuntu@$hostname:services/$service/public/

@@ -78,21 +78,21 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Visually appealing colors and layout. No overflowing elements.** - I did not complete this part of the deliverable.
-- [x] **Use of a CSS framework** - I did not complete this part of the deliverable.
-- [x] **All visual elements styled using CSS** - I did not complete this part of the deliverable.
-- [x] **Responsive to window resizing using flexbox and/or grid display** - I did not complete this part of the deliverable.
-- [x] **Use of a imported font** - I did not complete this part of the deliverable.
-- [x] **Use of different types of selectors including element, class, ID, and pseudo selectors** - I did not complete this part of the deliverable.
+- [x] **Visually appealing colors and layout. No overflowing elements.** - I used a green, coral, and yellow palette with a consistent visual hierarchy and checked desktop and mobile widths.
+- [x] **Use of a CSS framework** - Bootstrap provides the responsive grid, form controls, buttons, and table utilities.
+- [x] **All visual elements styled using CSS** - Shared styles define the navigation, forms, player card, game board, match updates, and history table.
+- [x] **Responsive to window resizing using flexbox and/or grid display** - Bootstrap's grid and custom flexbox/grid rules adapt all screens for mobile and desktop.
+- [x] **Use of a imported font** - DM Sans and Space Grotesk are imported from Google Fonts.
+- [x] **Use of different types of selectors including element, class, ID, and pseudo selectors** - The stylesheet uses element, class, ID, and pseudo selectors.
 
 ## 🚀 React part 1: Routing deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [ ] **Bundled using Vite** - I did not complete this part of the deliverable.
-- [ ] **Components** - I did not complete this part of the deliverable.
-- [ ] **Router** - I did not complete this part of the deliverable.
+- [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [x] **Bundled using Vite** - Vite builds the React application into the `dist` directory.
+- [x] **Components** - Reusable React components compose the sign-in, opponent selection, game board, and match history screens.
+- [x] **Router** - React Router switches between the application screens using hash-based routes for static hosting.
 
 ## 🚀 React part 2: Reactivity deliverable
 
