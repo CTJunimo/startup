@@ -4,70 +4,95 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Choose a game | Tic-Tac-Toe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header>
-      <h1>Tic-Tac-Toe</h1>
-      <nav aria-label="Main navigation">
-        <menu>
-          <li><a href="index.html">Sign in</a></li>
-          <li><a href="bots.html" aria-current="page">New game</a></li>
-          <li><a href="play.html">Game board</a></li>
-          <li><a href="scores.html">Match history</a></li>
-        </menu>
-      </nav>
+    <header class="site-header">
+      <div class="container-xl header-inner">
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">XO</span><span>Tic-Tac-Toe</span></a>
+        <nav aria-label="Main navigation">
+          <menu class="nav-list">
+            <li><a class="nav-link" href="index.html">Sign in</a></li>
+            <li><a class="nav-link active" href="bots.html" aria-current="page">New game</a></li>
+            <li><a class="nav-link" href="play.html">Game board</a></li>
+            <li><a class="nav-link" href="scores.html">Match history</a></li>
+          </menu>
+        </nav>
+      </div>
     </header>
 
-    <main>
-      <h2>Choose your opponent</h2>
+    <main class="container-xl page-shell">
+      <div class="page-heading">
+        <p class="eyebrow">Set up a match</p>
+        <h1>Choose your opponent</h1>
+        <p class="lead-copy">Pick a mode, then find your kind of competition.</p>
+      </div>
       <form action="play.html" method="get">
-        <fieldset>
-          <legend>Game mode</legend>
-          <p>
-            <input id="bot-mode" name="mode" type="radio" value="bot" checked />
-            <label for="bot-mode">Play against a bot</label>
-          </p>
-          <p>
-            <input id="multiplayer-mode" name="mode" type="radio" value="multiplayer" />
-            <label for="multiplayer-mode">Play against another person online</label>
-          </p>
-        </fieldset>
+        <div class="row g-4 align-items-stretch">
+          <section class="col-lg-7">
+            <div class="card option-panel h-100">
+              <div class="card-body">
+                <fieldset class="choice-group">
+                  <legend>Game mode</legend>
+                  <div class="mode-options">
+                    <div class="form-check mode-choice">
+                      <input class="form-check-input" id="bot-mode" name="mode" type="radio" value="bot" checked />
+                      <label class="form-check-label" for="bot-mode"><strong>Solo</strong><span>Play against a bot</span></label>
+                    </div>
+                    <div class="form-check mode-choice">
+                      <input class="form-check-input" id="multiplayer-mode" name="mode" type="radio" value="multiplayer" />
+                      <label class="form-check-label" for="multiplayer-mode"><strong>Online</strong><span>Challenge another player</span></label>
+                    </div>
+                  </div>
+                </fieldset>
+                <fieldset class="choice-group bot-settings">
+                  <legend>Bot settings</legend>
+                  <div class="mb-3">
+                    <label class="form-label" for="bot">Personality</label>
+                    <select class="form-select" id="bot" name="bot">
+                      <option value="nova">Nova - bold and competitive</option>
+                      <option value="milo">Milo - friendly and relaxed</option>
+                      <option value="sage">Sage - thoughtful strategist</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" for="difficulty">Difficulty</label>
+                    <select class="form-select" id="difficulty" name="difficulty">
+                      <option value="easy">Easy</option>
+                      <option value="medium" selected>Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+                </fieldset>
+                <button class="btn btn-primary start-button" type="submit">Start game <span aria-hidden="true">→</span></button>
+              </div>
+            </div>
+          </section>
 
-        <fieldset>
-          <legend>Bot</legend>
-          <p>
-            <label for="bot">Choose a personality</label>
-            <select id="bot" name="bot">
-              <option value="nova">Nova - bold and competitive</option>
-              <option value="milo">Milo - friendly and relaxed</option>
-              <option value="sage">Sage - thoughtful strategist</option>
-            </select>
-          </p>
-          <p>
-            <label for="difficulty">Difficulty</label>
-            <select id="difficulty" name="difficulty">
-              <option value="easy">Easy</option>
-              <option value="medium" selected>Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </p>
-        </fieldset>
-
-        <section aria-labelledby="profile-heading">
-          <h3 id="profile-heading">Player profile image</h3>
-          <figure>
-            <img src="https://placehold.co/120x120?text=Player" alt="Placeholder player profile image" />
-            <figcaption>This image will be replaced with a random image from the third-party API.</figcaption>
-          </figure>
-          <p><a href="https://api.api-ninjas.com/v1/randomimage">Random image API</a></p>
-        </section>
-
-        <button type="submit">Start game</button>
+          <section class="col-lg-5" aria-labelledby="profile-heading">
+            <div class="card profile-panel h-100">
+              <div class="card-body">
+                <p class="eyebrow">Your player card</p>
+                <h2 id="profile-heading">Ready to play?</h2>
+                <figure class="profile-figure">
+                  <img src="https://placehold.co/160x160?text=Player" alt="Placeholder player profile image" />
+                  <figcaption>A random image will represent your player profile.</figcaption>
+                </figure>
+                <a class="api-link" href="https://api.api-ninjas.com/v1/randomimage">Image source: Random Image API <span aria-hidden="true">↗</span></a>
+              </div>
+            </div>
+          </section>
+        </div>
       </form>
     </main>
 
-    <footer>
-      <p><a href="scores.html">View match history</a></p>
+    <footer class="site-footer container-xl">
+      <span>Good games start with a good rival.</span>
+      <a href="scores.html">View match history</a>
     </footer>
   </body>
 </html>
