@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import profilePlaceholder from '../../placeholder.png';
 
 function GameModeOptions() {
@@ -64,6 +64,14 @@ function PlayerCard() {
 }
 
 export default function OpponentPage() {
+  const navigate = useNavigate();
+
+  function handleStartGame(event) {
+    event.preventDefault();
+    const settings = new URLSearchParams(new FormData(event.currentTarget));
+    navigate(`/play?${settings.toString()}`);
+  }
+
   return (
     <main className="container-xl page-shell">
       <div className="page-heading">
@@ -71,18 +79,18 @@ export default function OpponentPage() {
         <h1>Choose your opponent</h1>
         <p className="lead-copy">Pick a mode, then find your kind of competition.</p>
       </div>
-      <div className="row g-4 align-items-stretch">
+      <form className="row g-4 align-items-stretch" onSubmit={handleStartGame}>
         <section className="col-lg-7">
           <div className="card option-panel h-100">
             <div className="card-body">
               <GameModeOptions />
               <BotSettings />
-              <Link className="btn btn-primary start-button" to="/play">Start game <span aria-hidden="true">→</span></Link>
+              <button className="btn btn-primary start-button" type="submit">Start game <span aria-hidden="true">→</span></button>
             </div>
           </div>
         </section>
         <PlayerCard />
-      </div>
+      </form>
     </main>
   );
 }

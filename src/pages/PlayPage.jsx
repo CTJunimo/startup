@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 const winningLines = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -26,13 +26,77 @@ function findWinningMove(board, mark) {
   return null;
 }
 
-function getBotMove(board) {
-  return findWinningMove(board, 'O')
-    ?? findWinningMove(board, 'X')
-    ?? (board[4] === null ? 4 : null)
-    ?? [0, 2, 6, 8].find((index) => board[index] === null)
-    ?? [1, 3, 5, 7].find((index) => board[index] === null)
-    ?? null;
+function getAvailableMoves(board) {
+  return board.flatMap((value, index) => value === null ? [index] : []);
+}
+
+function chooseRandom(moves) {
+  return moves[Math.floor(Math.random() * moves.length)] ?? null;
+}
+
+function getEasyMove(board) {
+  return chooseRandom(getAvailableMoves(board));
+}
+
+function getMediumMove(board) {
+  const winningMove = findWinningMove(board, 'O');
+  if (winningMove !== null) return winningMove;
+
+  const blockingMove = findWinningMove(board, 'X');
+  if (blockingMove !== null) return blockingMove;
+
+  if (board[4] === null) return 4;
+  const corners = [0, 2, 6, 8].filter((index) => board[index] === null);
+  return chooseRandom(corners.length > 0 ? corners : getAvailableMoves(board));
+}
+
+function minimax(board, depth, isMaximizing, alpha = -Infinity, beta = Infinity) {
+  const winner = getWinner(board);
+  if (winner === 'O') return 10 - depth;
+  if (winner === 'X') return depth - 10;
+  if (board.every(Boolean)) return 0;
+
+  let bestScore = isMaximizing ? -Infinity : Infinity;
+  for (const move of getAvailableMoves(board)) {
+    board[move] = isMaximizing ? 'O' : 'X';
+    const score = minimax(board, depth + 1, !isMaximizing, alpha, beta);
+    board[move] = null;
+
+    if (isMaximizing) {
+      bestScore = Math.max(bestScore, score);
+      alpha = Math.max(alpha, bestScore);
+    } else {
+      bestScore = Math.min(bestScore, score);
+      beta = Math.min(beta, bestScore);
+    }
+    if (beta <= alpha) break;
+  }
+  return bestScore;
+}
+
+function getHardMove(board) {
+  const searchBoard = [...board];
+  let bestScore = -Infinity;
+  let bestMoves = [];
+
+  for (const move of getAvailableMoves(searchBoard)) {
+    searchBoard[move] = 'O';
+    const score = minimax(searchBoard, 0, false);
+    searchBoard[move] = null;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMoves = [move];
+    } else if (score === bestScore) {
+      bestMoves.push(move);
+    }
+  }
+  return chooseRandom(bestMoves);
+}
+
+function getBotMove(board, difficulty) {
+  if (difficulty === 'easy') return getEasyMove(board);
+  if (difficulty === 'hard') return getHardMove(board);
+  return getMediumMove(board);
 }
 
 function createNewGame() {
@@ -88,7 +152,7 @@ function getStatusMessage(game) {
   return 'In progress';
 }
 
-function MatchSidebar({ status }) {
+function MatchSidebar({ status, botName, difficulty }) {
   const dialogue = status === 'X'
     ? 'Well played! You got me this time.'
     : status === 'O'
@@ -101,11 +165,15 @@ function MatchSidebar({ status }) {
     <aside className="col-lg-5 match-sidebar">
       <section className="card dialogue-panel">
         <div className="card-body">
-          <p className="eyebrow">Nova says</p>
+          <p className="eyebrow">{botName} says</p>
           <p className="bot-quote">“{dialogue}”</p>
           <div className="match-status">
             <span>Match status</span>
             <output id="result" className="status-pill" aria-live="polite">{getStatusMessage({ status })}</output>
+          </div>
+          <div className="match-status">
+            <span>Difficulty</span>
+            <output className="status-pill">{difficulty[0].toUpperCase() + difficulty.slice(1)}</output>
           </div>
         </div>
       </section>
@@ -124,6 +192,11 @@ function MatchSidebar({ status }) {
 
 export default function PlayPage() {
   const [game, setGame] = useState(createNewGame);
+  const [searchParams] = useSearchParams();
+  const difficulty = ['easy', 'medium', 'hard'].includes(searchParams.get('difficulty'))
+    ? searchParams.get('difficulty')
+    : 'medium';
+  const botName = { nova: 'Nova', milo: 'Milo', sage: 'Sage' }[searchParams.get('bot')] ?? 'Nova';
 
   function handleSelect(index) {
     setGame((currentGame) => {
@@ -135,7 +208,7 @@ export default function PlayPage() {
       if (playerBoard.every(Boolean)) return { board: playerBoard, status: 'draw' };
 
       const botBoard = [...playerBoard];
-      const botMove = getBotMove(botBoard);
+      const botMove = getBotMove(botBoard, difficulty);
       if (botMove === null) return { board: botBoard, status: 'draw' };
       botBoard[botMove] = 'O';
 
@@ -167,7 +240,7 @@ export default function PlayPage() {
             </div>
           </div>
         </section>
-        <MatchSidebar status={game.status} />
+        <MatchSidebar status={game.status} botName={botName} difficulty={difficulty} />
       </div>
     </main>
   );
