@@ -147,6 +147,26 @@ select:focus-visible {
   box-shadow: inset 0 -2px var(--yellow);
 }
 
+.account-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #d5e1d9;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.header-signout {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--yellow);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .page-shell {
   flex: 1;
   padding-top: clamp(3rem, 7vw, 6rem);
@@ -172,6 +192,15 @@ select:focus-visible {
 
 .welcome-copy h1 span {
   color: var(--green);
+}
+
+.author-attribution {
+  display: grid;
+  justify-items: start;
+  gap: 0.35rem;
+  margin-top: 1.2rem;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .mini-board {
@@ -277,6 +306,43 @@ select:focus-visible {
   color: var(--muted);
   font-size: 0.92rem;
   text-align: center;
+}
+
+.text-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.text-action:hover {
+  color: var(--green-dark);
+}
+
+.demo-note,
+.account-email {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.demo-note {
+  margin: 1rem 0 0;
+}
+
+.signout-action {
+  display: block;
+  margin: 1rem auto 0;
+}
+
+.form-error {
+  color: #a64232;
+  font-size: 0.9rem;
 }
 
 .site-footer {
@@ -733,6 +799,34 @@ select:focus-visible {
   font-size: 0.8rem;
 }
 
+.history-empty {
+  padding: 3rem 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.history-empty h2 {
+  color: var(--ink);
+}
+
+.history-empty p {
+  margin: 0;
+}
+
+.history-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid #edf1ec;
+}
+
+.history-panel-footer .data-note {
+  padding: 0;
+  border: 0;
+}
+
 @media (max-width: 767.98px) {
   .header-inner {
     align-items: flex-start;
@@ -740,6 +834,10 @@ select:focus-visible {
     gap: 0.7rem;
     padding-top: 1rem;
     padding-bottom: 1rem;
+  }
+
+  .account-status {
+    align-self: flex-start;
   }
 
   .nav-list {

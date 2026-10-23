@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import LiveUpdates from '../components/LiveUpdates.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { useMatchHistory } from '../contexts/MatchHistoryContext.jsx';
 
 const winningLines = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -38,6 +41,17 @@ const botProfiles = {
       loss: "Wow! You played so well! Do you want to play again?",
       draw: "Oh, a draw! You played really well!",
     },
+  },
+};
+
+const mockOnlineOpponent = {
+  name: 'Casey',
+  reactions: {
+    opening: 'I found a match! Good luck.',
+    move: 'Nice move. Let me think about this.',
+    win: 'That was a close one. Nice game!',
+    loss: 'You got me. Want another round?',
+    draw: 'A draw! That was close.',
   },
 };
 
@@ -134,7 +148,12 @@ function getBotMove(board, difficulty) {
 }
 
 function createNewGame() {
-  return { board: Array(9).fill(null), status: 'playing', reaction: 'opening' };
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    board: Array(9).fill(null),
+    status: 'playing',
+    reaction: 'opening',
+  };
 }
 
 function GameSquare({ value, index, onSelect, disabled }) {
@@ -179,39 +198,32 @@ function GameBoard({ game, onSelect }) {
   );
 }
 
-function getStatusMessage(game, botName) {
+function getStatusMessage(game, opponentName) {
+  if (game.status === 'waiting') return `Waiting for ${opponentName}...`;
   if (game.status === 'X') return 'You win!';
-  if (game.status === 'O') return `${botName} wins!`;
+  if (game.status === 'O') return `${opponentName} wins!`;
   if (game.status === 'draw') return "It's a draw!";
   return 'In progress';
 }
 
-function MatchSidebar({ game, botProfile, difficulty }) {
+function MatchSidebar({ game, opponent, difficulty, mode }) {
   return (
     <aside className="col-lg-5 match-sidebar">
       <section className="card dialogue-panel">
         <div className="card-body">
-          <p className="eyebrow">{botProfile.name} says</p>
-          <p className="bot-quote">“{botProfile.reactions[game.reaction]}”</p>
+          <p className="eyebrow">{opponent.name} says</p>
+          <p className="bot-quote">“{opponent.reactions[game.reaction]}”</p>
           <div className="match-status">
             <span>Match status</span>
-            <output id="result" className="status-pill" aria-live="polite">{getStatusMessage(game, botProfile.name)}</output>
+            <output id="result" className="status-pill" aria-live="polite">{getStatusMessage(game, opponent.name)}</output>
           </div>
           <div className="match-status">
-            <span>Difficulty</span>
-            <output className="status-pill">{difficulty[0].toUpperCase() + difficulty.slice(1)}</output>
+            <span>{mode === 'multiplayer' ? 'Opponent' : 'Difficulty'}</span>
+            <output className="status-pill">{mode === 'multiplayer' ? 'Online demo' : difficulty[0].toUpperCase() + difficulty.slice(1)}</output>
           </div>
         </div>
       </section>
-      <section className="updates-panel" aria-labelledby="updates-heading">
-        <div className="updates-heading">
-          <h2 id="updates-heading">Live updates</h2>
-          <span className="live-indicator">LIVE</span>
-        </div>
-        <ul id="live-updates" aria-live="polite">
-          <li>Moves and match results will appear here.</li>
-        </ul>
-      </section>
+      <LiveUpdates />
     </aside>
   );
 }
@@ -219,10 +231,48 @@ function MatchSidebar({ game, botProfile, difficulty }) {
 export default function PlayPage() {
   const [game, setGame] = useState(createNewGame);
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { recordMatch } = useMatchHistory();
   const difficulty = ['easy', 'medium', 'hard'].includes(searchParams.get('difficulty'))
     ? searchParams.get('difficulty')
     : 'medium';
   const botProfile = botProfiles[searchParams.get('bot')] ?? botProfiles.nova;
+  const mode = searchParams.get('mode') === 'multiplayer' ? 'multiplayer' : 'bot';
+  const opponent = mode === 'multiplayer' ? mockOnlineOpponent : botProfile;
+  const recordedGameId = useRef(null);
+
+  useEffect(() => {
+    if (!user || !['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
+    recordedGameId.current = game.id;
+    recordMatch({
+      id: game.id,
+      email: user.email,
+      playedAt: new Date().toISOString(),
+      opponent: opponent.name,
+      mode,
+      difficulty,
+      result: game.status === 'X' ? 'Win' : game.status === 'O' ? 'Loss' : 'Draw',
+    });
+  }, [difficulty, game, mode, opponent.name, recordMatch, user]);
+
+  useEffect(() => {
+    if (mode !== 'multiplayer' || game.status !== 'waiting') return undefined;
+
+    const timer = window.setTimeout(() => {
+      setGame((currentGame) => {
+        if (currentGame.status !== 'waiting') return currentGame;
+        const nextBoard = [...currentGame.board];
+        const move = getBotMove(nextBoard, 'medium');
+        if (move === null) return { ...currentGame, status: 'draw', reaction: 'draw' };
+        nextBoard[move] = 'O';
+        if (getWinner(nextBoard) === 'O') return { ...currentGame, board: nextBoard, status: 'O', reaction: 'win' };
+        if (nextBoard.every(Boolean)) return { ...currentGame, board: nextBoard, status: 'draw', reaction: 'draw' };
+        return { ...currentGame, board: nextBoard, status: 'playing', reaction: 'move' };
+      });
+    }, 850);
+
+    return () => window.clearTimeout(timer);
+  }, [game.board, game.status, mode]);
 
   function handleSelect(index) {
     setGame((currentGame) => {
@@ -230,17 +280,21 @@ export default function PlayPage() {
 
       const playerBoard = [...currentGame.board];
       playerBoard[index] = 'X';
-      if (getWinner(playerBoard) === 'X') return { board: playerBoard, status: 'X', reaction: 'loss' };
-      if (playerBoard.every(Boolean)) return { board: playerBoard, status: 'draw', reaction: 'draw' };
+      if (getWinner(playerBoard) === 'X') return { ...currentGame, board: playerBoard, status: 'X', reaction: 'loss' };
+      if (playerBoard.every(Boolean)) return { ...currentGame, board: playerBoard, status: 'draw', reaction: 'draw' };
+
+      if (mode === 'multiplayer') {
+        return { ...currentGame, board: playerBoard, status: 'waiting', reaction: 'move' };
+      }
 
       const botBoard = [...playerBoard];
       const botMove = getBotMove(botBoard, difficulty);
-      if (botMove === null) return { board: botBoard, status: 'draw', reaction: 'draw' };
+      if (botMove === null) return { ...currentGame, board: botBoard, status: 'draw', reaction: 'draw' };
       botBoard[botMove] = 'O';
 
-      if (getWinner(botBoard) === 'O') return { board: botBoard, status: 'O', reaction: 'win' };
-      if (botBoard.every(Boolean)) return { board: botBoard, status: 'draw', reaction: 'draw' };
-      return { board: botBoard, status: 'playing', reaction: 'move' };
+      if (getWinner(botBoard) === 'O') return { ...currentGame, board: botBoard, status: 'O', reaction: 'win' };
+      if (botBoard.every(Boolean)) return { ...currentGame, board: botBoard, status: 'draw', reaction: 'draw' };
+      return { ...currentGame, board: botBoard, status: 'playing', reaction: 'move' };
     });
   }
 
@@ -248,17 +302,17 @@ export default function PlayPage() {
     <main className="container-xl page-shell">
       <div className="page-heading">
         <p className="eyebrow">Your match</p>
-        <h1>{game.status === 'playing' ? 'Your move.' : getStatusMessage(game, botProfile.name)}</h1>
+        <h1>{game.status === 'playing' ? 'Your move.' : getStatusMessage(game, opponent.name)}</h1>
       </div>
       <div className="row g-4 align-items-start">
         <section className="col-lg-7" aria-label="Game board">
           <div className="game-stage">
             <div className="match-strip">
-              <div><span className="player-token token-x">X</span><span>You</span></div>
+              <div><span className="player-token token-x">X</span><span>{user.displayName}</span></div>
               <span className="versus">VS</span>
-              <div><span className="player-token token-o">O</span><span>{botProfile.name}</span></div>
+              <div><span className="player-token token-o">O</span><span>{opponent.name}</span></div>
             </div>
-            <p className="game-prompt"><span className="turn-dot"></span><output id="turn" aria-live="polite">{game.status === 'playing' ? 'Your turn' : 'Match complete'}</output></p>
+            <p className="game-prompt"><span className="turn-dot"></span><output id="turn" aria-live="polite">{game.status === 'waiting' ? `${opponent.name} is choosing a move...` : game.status === 'playing' ? 'Your turn' : 'Match complete'}</output></p>
             <GameBoard game={game} onSelect={handleSelect} />
             <div className="board-actions">
               <button className="btn btn-outline-secondary" type="button" onClick={() => setGame(createNewGame())}>Restart match</button>
@@ -266,7 +320,7 @@ export default function PlayPage() {
             </div>
           </div>
         </section>
-        <MatchSidebar game={game} botProfile={botProfile} difficulty={difficulty} />
+        <MatchSidebar game={game} opponent={opponent} difficulty={difficulty} mode={mode} />
       </div>
     </main>
   );

@@ -1,13 +1,15 @@
 import { NavLink } from 'react-router-dom';
-
-const navigation = [
-  { to: '/', label: 'Sign in', end: true },
-  { to: '/bots', label: 'New game' },
-  { to: '/play', label: 'Game board' },
-  { to: '/scores', label: 'Match history' },
-];
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function SiteHeader() {
+  const { user, signOut } = useAuth();
+  const navigation = [
+    { to: '/', label: user ? 'Home' : 'Sign in', end: true },
+    { to: '/bots', label: 'New game' },
+    { to: '/play', label: 'Game board' },
+    { to: '/scores', label: 'Match history' },
+  ];
+
   return (
     <header className="site-header">
       <div className="container-xl header-inner">
@@ -30,6 +32,12 @@ export default function SiteHeader() {
             ))}
           </menu>
         </nav>
+        {user && (
+          <div className="account-status">
+            <span>{user.displayName}</span>
+            <button className="header-signout" type="button" onClick={signOut}>Sign out</button>
+          </div>
+        )}
       </div>
     </header>
   );

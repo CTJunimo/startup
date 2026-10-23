@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 function MiniBoard() {
   return (
@@ -11,23 +13,69 @@ function MiniBoard() {
 }
 
 function SignInForm() {
+  const { user, signIn, register, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState('sign-in');
+  const [error, setError] = useState('');
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    const email = String(fields.get('email'));
+
+    if (mode === 'register') {
+      register(String(fields.get('displayName')), email);
+    } else {
+      signIn(email);
+    }
+    setError('');
+    navigate('/bots');
+  }
+
+  if (user) {
+    return (
+      <div className="card auth-panel">
+        <div className="card-body">
+          <p className="eyebrow">Player account</p>
+          <h2>Welcome, {user.displayName}</h2>
+          <p className="lead-copy account-email">{user.email}</p>
+          <Link className="btn btn-primary w-100" to="/bots">Start a game <span aria-hidden="true">→</span></Link>
+          <button className="text-action signout-action" type="button" onClick={signOut}>Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card auth-panel">
       <div className="card-body">
-        <p className="eyebrow">Player sign-in</p>
-        <h2>Welcome back</h2>
-        <form action="/api/auth/login" method="post">
+        <p className="eyebrow">{mode === 'register' ? 'Create player account' : 'Player sign-in'}</p>
+        <h2>{mode === 'register' ? 'Join the game' : 'Welcome back'}</h2>
+        <form onSubmit={handleSubmit}>
+          {mode === 'register' && (
+            <div className="mb-3">
+              <label className="form-label" htmlFor="display-name">Player name</label>
+              <input className="form-control" id="display-name" name="displayName" type="text" autoComplete="name" maxLength={28} required />
+            </div>
+          )}
           <div className="mb-3">
             <label className="form-label" htmlFor="email">Email</label>
             <input className="form-control" id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
           </div>
           <div className="mb-4">
             <label className="form-label" htmlFor="password">Password</label>
-            <input className="form-control" id="password" name="password" type="password" autoComplete="current-password" placeholder="Enter your password" required />
+            <input className="form-control" id="password" name="password" type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} minLength={6} placeholder="At least 6 characters" required />
           </div>
-          <button className="btn btn-primary w-100" type="submit">Sign in <span aria-hidden="true">→</span></button>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className="btn btn-primary w-100" type="submit">{mode === 'register' ? 'Create account' : 'Sign in'} <span aria-hidden="true">→</span></button>
         </form>
-        <p className="account-prompt">New around here? <Link to="/bots">Create an account</Link></p>
+        <p className="account-prompt">
+          {mode === 'register' ? 'Already have an account?' : 'New around here?'}{' '}
+          <button className="text-action" type="button" onClick={() => { setMode(mode === 'register' ? 'sign-in' : 'register'); setError(''); }}>
+            {mode === 'register' ? 'Sign in' : 'Create an account'}
+          </button>
+        </p>
+        <p className="demo-note">Demo account data stays in this browser. Passwords are not stored.</p>
       </div>
     </div>
   );
@@ -41,6 +89,10 @@ export default function LoginPage() {
           <p className="eyebrow">A little friendly rivalry</p>
           <h1>Make your<br /><span>next move.</span></h1>
           <p className="lead-copy">Quick matches, clever opponents, and a fresh chance to win.</p>
+          <div className="author-attribution">
+            <span>Created by CTJunimo</span>
+            <a href="https://github.com/CTJunimo/startup" target="_blank" rel="noreferrer">View startup on GitHub <span aria-hidden="true">↗</span></a>
+          </div>
           <MiniBoard />
         </section>
         <section className="col-lg-5 offset-lg-1" aria-label="Sign in">

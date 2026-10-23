@@ -24,6 +24,12 @@ Interesting things I have learned about HTML
 
 Interesting things I have learned about React
 
+- Keep shared session and match-history state in context providers so routed pages can use the same data.
+- Use `useEffect` to synchronize React state with `localStorage`, register browser event listeners, and start timers; always clean up listeners and timers when a component unmounts.
+- Store only mock profile information in `localStorage`; never persist passwords in a browser-only authentication demo.
+- Use a stable match ID so an effect can safely record a completed game once, even when React re-renders.
+- Hash-based React Router routes work on static hosting without server-side route rewrites.
+
 ## Beginning: Pushing and Pulling
 
 Github:
