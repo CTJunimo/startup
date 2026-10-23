@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useMatchHistory } from '../contexts/MatchHistoryContext.jsx';
 
 function MatchRow({ match }) {
-  const opponent = match.mode === 'multiplayer' ? 'Casey (demo)' : match.opponent;
+  const opponent = match.opponent || 'Opponent';
   const resultStyle = match.result === 'Win'
     ? 'result-win'
     : match.result === 'Loss'
@@ -14,7 +14,7 @@ function MatchRow({ match }) {
     <tr>
       <td>{new Date(match.playedAt).toLocaleDateString()}</td>
       <td><span className="opponent-mark mark-nova">{opponent[0]}</span>{opponent}</td>
-      <td><span className="mode-tag">{match.mode === 'multiplayer' ? 'Online demo' : `Bot · ${match.difficulty}`}</span></td>
+      <td><span className="mode-tag">{match.mode === 'multiplayer' ? 'Online' : `Bot · ${match.difficulty}`}</span></td>
       <td><span className={`result-tag ${resultStyle}`}>{match.result}</span></td>
     </tr>
   );

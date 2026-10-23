@@ -99,8 +99,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - The browser-only demo supports optional mock registration/sign-in or guest play, bot matches at three difficulties, a delayed simulated online opponent, bot dialogue, local match history, and per-match activity. Passwords are never stored; real services and cross-device multiplayer remain future backend work.
-- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for changes across tabs, simulates live activity, and schedules the mock online player's moves.
+- [x] **All functionality implemented or mocked out** - The app supports optional guest/account play, three bot difficulties and personalities, per-account local match history, and real-time two-client matches through a WebSocket matchmaking server. Authentication and history remain browser-local; production multiplayer requires the server and `/ws` reverse proxy described in `server/README.md`.
+- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for cross-tab changes, records completed matches, and manages WebSocket connections and cleanup.
 
 ## 🚀 Service deliverable
 
@@ -128,11 +128,11 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [ ] **Backend listens for WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **Frontend makes WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **Data sent over WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **WebSocket data displayed** - I did not complete this part of the deliverable.
-- [ ] **Application is fully functional** - I did not complete this part of the deliverable.
+- [x] **Backend listens for WebSocket connection** - `server/index.js` provides an in-memory matchmaking and authoritative tic-tac-toe service on `/ws`.
+- [x] **Frontend makes WebSocket connection** - The React game connects to `/ws`; Vite proxies this path to the local server during development.
+- [x] **Data sent over WebSocket connection** - Clients send join and move messages; the server validates turns and broadcasts room state.
+- [x] **WebSocket data displayed** - Both boards, turn indicators, results, and match activity update from server messages.
+- [ ] **Application is fully functional in production** - Two-client play is verified locally. Production requires deploying the Node process and configuring the TLS reverse proxy described in `server/README.md`.
 
 ## Modifications (README)
 
@@ -140,6 +140,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 - Added an optional local mock account flow with registration, sign-in, sign-out, persisted player profiles, and guest access to every game route.
 - Added persistent per-account match history with a clear-history action.
-- Added delayed local online-opponent moves and a match activity log populated from actual moves and results. Real WebSocket events are not implemented.
+- Added an authoritative WebSocket matchmaking server, synchronized two-player turns, server-validated results, shared restart, and real match activity.
+- Added Vite development proxy setup and production instructions; the existing React deployment script still deploys only static files.
 - Added the author's GitHub repository link to the home screen.
-- No passwords are stored. Real authentication, database storage, third-party image requests, deployment, and cross-device multiplayer are not implemented by these browser mocks.
+- No passwords are stored. Authentication and match history remain local mocks. Production multiplayer still requires a running server process and TLS reverse-proxy configuration.

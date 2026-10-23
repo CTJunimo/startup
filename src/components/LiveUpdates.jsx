@@ -1,9 +1,9 @@
-export default function LiveUpdates({ activity, simulated }) {
+export default function LiveUpdates({ activity, label }) {
   return (
     <section className="updates-panel" aria-labelledby="activity-heading">
       <div className="updates-heading">
         <h2 id="activity-heading">Match activity</h2>
-        <span className="activity-badge">{simulated ? 'DEMO' : 'LOCAL'}</span>
+        <span className="activity-badge">{label}</span>
       </div>
       <ul id="match-activity" aria-live="polite">
         {activity.length > 0

@@ -44,10 +44,9 @@ const botProfiles = {
   },
 };
 
-const mockOnlineOpponent = {
-  name: 'Casey',
+const onlineOpponent = {
   reactions: {
-    opening: 'I found a match! Good luck.',
+    opening: 'Waiting for another player to join.',
     move: 'Nice move. Let me think about this.',
     win: 'That was a close one. Nice game!',
     loss: 'You got me. Want another round?',
@@ -147,13 +146,16 @@ function getBotMove(board, difficulty) {
   return getMediumMove(board);
 }
 
-function createNewGame() {
+function createNewGame(status = 'playing') {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     board: Array(9).fill(null),
-    status: 'playing',
+    status,
     reaction: 'opening',
     activity: [],
+    playerMark: null,
+    turnMark: null,
+    opponentName: null,
   };
 }
 
@@ -186,7 +188,7 @@ function GameSquare({ value, index, onSelect, disabled }) {
   );
 }
 
-function GameBoard({ game, onSelect }) {
+function GameBoard({ game, onSelect, disabled = false }) {
   return (
     <table className="game-board">
       <caption className="visually-hidden">Tic-tac-toe game board</caption>
@@ -201,7 +203,7 @@ function GameBoard({ game, onSelect }) {
                     value={game.board[index]}
                     index={index}
                     onSelect={onSelect}
-                    disabled={game.status !== 'playing'}
+                    disabled={disabled || game.status !== 'playing'}
                   />
                 </td>
               );
@@ -214,14 +216,17 @@ function GameBoard({ game, onSelect }) {
 }
 
 function getStatusMessage(game, opponentName) {
+  if (game.status === 'connecting') return 'Connecting to multiplayer...';
+  if (game.status === 'waiting' && opponentName === 'Waiting for opponent') return 'Waiting for another player...';
   if (game.status === 'waiting') return `Waiting for ${opponentName}...`;
+  if (game.status === 'opponent-left') return 'Opponent disconnected.';
   if (game.status === 'X') return 'You win!';
   if (game.status === 'O') return `${opponentName} wins!`;
   if (game.status === 'draw') return "It's a draw!";
   return 'In progress';
 }
 
-function MatchSidebar({ game, opponent, difficulty, mode }) {
+function MatchSidebar({ game, opponent, difficulty, mode, connectionStatus }) {
   return (
     <aside className="col-lg-5 match-sidebar">
       <section className="card dialogue-panel">
@@ -234,28 +239,114 @@ function MatchSidebar({ game, opponent, difficulty, mode }) {
           </div>
           <div className="match-status">
             <span>{mode === 'multiplayer' ? 'Opponent' : 'Difficulty'}</span>
-            <output className="status-pill">{mode === 'multiplayer' ? 'Online demo' : difficulty[0].toUpperCase() + difficulty.slice(1)}</output>
+            <output className="status-pill">{mode === 'multiplayer' ? 'Online match' : difficulty[0].toUpperCase() + difficulty.slice(1)}</output>
           </div>
+          {(connectionStatus === 'error' || connectionStatus === 'disconnected') && (
+            <p className="form-error" role="alert">Connection lost. Restart the match to reconnect.</p>
+          )}
         </div>
       </section>
-      <LiveUpdates activity={game.activity} simulated={mode === 'multiplayer'} />
+      <LiveUpdates
+        activity={game.activity}
+        label={mode === 'multiplayer'
+          ? connectionStatus === 'connected'
+            ? 'ONLINE'
+            : connectionStatus === 'error' || connectionStatus === 'disconnected' ? 'OFFLINE' : 'CONNECTING'
+          : 'LOCAL'}
+      />
     </aside>
   );
 }
 
 export default function PlayPage() {
-  const [game, setGame] = useState(createNewGame);
   const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') === 'multiplayer' ? 'multiplayer' : 'bot';
+  const [game, setGame] = useState(() => createNewGame(mode === 'multiplayer' ? 'connecting' : 'playing'));
   const { user } = useAuth();
   const { recordMatch } = useMatchHistory();
   const player = user ?? { email: 'guest@local', displayName: 'Guest' };
+  const [connectionStatus, setConnectionStatus] = useState(mode === 'multiplayer' ? 'connecting' : 'local');
+  const socketRef = useRef(null);
   const difficulty = ['easy', 'medium', 'hard'].includes(searchParams.get('difficulty'))
     ? searchParams.get('difficulty')
     : 'medium';
   const botProfile = botProfiles[searchParams.get('bot')] ?? botProfiles.nova;
-  const mode = searchParams.get('mode') === 'multiplayer' ? 'multiplayer' : 'bot';
-  const opponent = mode === 'multiplayer' ? mockOnlineOpponent : botProfile;
+  const opponent = mode === 'multiplayer'
+    ? { ...onlineOpponent, name: game.opponentName ?? 'another player' }
+    : botProfile;
   const recordedGameId = useRef(null);
+
+  useEffect(() => {
+    if (mode !== 'multiplayer') {
+      setConnectionStatus('local');
+      return undefined;
+    }
+
+    let active = true;
+    const socketUrl = new URL('/ws', window.location.href);
+    socketUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(socketUrl);
+    socketRef.current = socket;
+    setConnectionStatus('connecting');
+
+    socket.addEventListener('open', () => {
+      if (!active) return;
+      setConnectionStatus('connected');
+      socket.send(JSON.stringify({ type: 'join', name: player.displayName }));
+    });
+
+    socket.addEventListener('message', (event) => {
+      if (!active) return;
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (message.type === 'state') {
+        const status = message.status === 'finished'
+          ? message.result === 'draw' ? 'draw' : message.result === 'win' ? 'X' : 'O'
+          : message.status;
+        const reaction = status === 'X'
+          ? 'loss'
+          : status === 'O'
+            ? 'win'
+            : status === 'draw'
+              ? 'draw'
+              : message.status === 'waiting' ? 'opening' : 'move';
+
+        setGame((currentGame) => ({
+          ...currentGame,
+          id: message.gameId ?? currentGame.id,
+          board: message.board,
+          status,
+          reaction,
+          playerMark: message.playerMark,
+          turnMark: message.turnMark,
+          opponentName: message.opponentName,
+          activity: message.activity,
+        }));
+      } else if (message.type === 'opponent-left') {
+        setGame((currentGame) => withActivity({ ...currentGame, status: 'opponent-left' }, message.message));
+      } else if (message.type === 'error') {
+        setGame((currentGame) => withActivity(currentGame, message.message));
+      }
+    });
+
+    socket.addEventListener('error', () => {
+      if (active) setConnectionStatus('error');
+    });
+    socket.addEventListener('close', () => {
+      if (active) setConnectionStatus((currentStatus) => currentStatus === 'error' ? 'error' : 'disconnected');
+    });
+
+    return () => {
+      active = false;
+      if (socketRef.current === socket) socketRef.current = null;
+      socket.close();
+    };
+  }, [mode, player.displayName]);
 
   useEffect(() => {
     if (!['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
@@ -271,28 +362,15 @@ export default function PlayPage() {
     });
   }, [difficulty, game, mode, opponent.name, player.email, recordMatch]);
 
-  useEffect(() => {
-    if (mode !== 'multiplayer' || game.status !== 'waiting') return undefined;
-
-    const timer = window.setTimeout(() => {
-      setGame((currentGame) => {
-        if (currentGame.status !== 'waiting') return currentGame;
-        const nextBoard = [...currentGame.board];
-        const move = getBotMove(nextBoard, 'medium');
-        if (move === null) return withActivity({ ...currentGame, status: 'draw', reaction: 'draw' }, "The match ended in a draw.");
-        nextBoard[move] = 'O';
-        const nextGame = { ...currentGame, board: nextBoard };
-        const moveEvent = moveDescription(opponent.name, 'O', move);
-        if (getWinner(nextBoard) === 'O') return withActivity({ ...nextGame, status: 'O', reaction: 'win' }, moveEvent, `${opponent.name} won the match.`);
-        if (nextBoard.every(Boolean)) return withActivity({ ...nextGame, status: 'draw', reaction: 'draw' }, moveEvent, "The match ended in a draw.");
-        return withActivity({ ...nextGame, status: 'playing', reaction: 'move' }, moveEvent);
-      });
-    }, 850);
-
-    return () => window.clearTimeout(timer);
-  }, [game.board, game.status, mode]);
-
   function handleSelect(index) {
+    if (mode === 'multiplayer') {
+      const socket = socketRef.current;
+      if (game.status === 'playing' && game.turnMark === game.playerMark && socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'move', index }));
+      }
+      return;
+    }
+
     setGame((currentGame) => {
       if (currentGame.status !== 'playing' || currentGame.board[index] !== null) return currentGame;
 
@@ -302,10 +380,6 @@ export default function PlayPage() {
       const afterPlayerMove = { ...currentGame, board: playerBoard };
       if (getWinner(playerBoard) === 'X') return withActivity({ ...afterPlayerMove, status: 'X', reaction: 'loss' }, playerMove, `${player.displayName} won the match.`);
       if (playerBoard.every(Boolean)) return withActivity({ ...afterPlayerMove, status: 'draw', reaction: 'draw' }, playerMove, "The match ended in a draw.");
-
-      if (mode === 'multiplayer') {
-        return withActivity({ ...afterPlayerMove, status: 'waiting', reaction: 'move' }, playerMove, `Waiting for ${opponent.name} to move (demo).`);
-      }
 
       const botBoard = [...playerBoard];
       const botMove = getBotMove(botBoard, difficulty);
@@ -320,29 +394,54 @@ export default function PlayPage() {
     });
   }
 
+  function handleRestart() {
+    if (mode === 'multiplayer') {
+      const socket = socketRef.current;
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'restart', name: player.displayName }));
+      } else {
+        window.location.reload();
+      }
+      return;
+    }
+    setGame(createNewGame());
+  }
+
+  const playerMark = mode === 'multiplayer' ? game.playerMark ?? 'X' : 'X';
+  const opponentMark = playerMark === 'X' ? 'O' : 'X';
+  const playerName = mode === 'multiplayer' ? game.playerName ?? player.displayName : player.displayName;
+
   return (
     <main className="container-xl page-shell">
       <div className="page-heading">
         <p className="eyebrow">Your match</p>
-        <h1>{game.status === 'playing' ? 'Your move.' : getStatusMessage(game, opponent.name)}</h1>
+        <h1>{game.status === 'playing'
+          ? mode === 'multiplayer' && game.turnMark !== game.playerMark ? `${opponent.name}'s move.` : 'Your move.'
+          : getStatusMessage(game, opponent.name)}</h1>
       </div>
       <div className="row g-4 align-items-start">
         <section className="col-lg-7" aria-label="Game board">
           <div className="game-stage">
             <div className="match-strip">
-              <div><span className="player-token token-x">X</span><span>{player.displayName}</span></div>
+              <div><span className={`player-token ${playerMark === 'X' ? 'token-x' : 'token-o'}`}>{playerMark}</span><span>{playerName}</span></div>
               <span className="versus">VS</span>
-              <div><span className="player-token token-o">O</span><span>{opponent.name}</span></div>
+              <div><span className={`player-token ${opponentMark === 'X' ? 'token-x' : 'token-o'}`}>{opponentMark}</span><span>{opponent.name}</span></div>
             </div>
-            <p className="game-prompt"><span className="turn-dot"></span><output id="turn" aria-live="polite">{game.status === 'waiting' ? `${opponent.name} is choosing a move...` : game.status === 'playing' ? 'Your turn' : 'Match complete'}</output></p>
-            <GameBoard game={game} onSelect={handleSelect} />
+            <p className="game-prompt"><span className="turn-dot"></span><output id="turn" aria-live="polite">{game.status === 'playing'
+              ? mode === 'multiplayer' && game.turnMark !== game.playerMark ? `${opponent.name}'s turn` : 'Your turn'
+              : getStatusMessage(game, opponent.name)}</output></p>
+            <GameBoard
+              game={game}
+              onSelect={handleSelect}
+              disabled={mode === 'multiplayer' && (connectionStatus !== 'connected' || game.turnMark !== game.playerMark)}
+            />
             <div className="board-actions">
-              <button className="btn btn-outline-secondary" type="button" onClick={() => setGame(createNewGame())}>Restart match</button>
+              <button className="btn btn-outline-secondary" type="button" onClick={handleRestart}>Restart match</button>
               <Link to="/bots">Change opponent</Link>
             </div>
           </div>
         </section>
-        <MatchSidebar game={game} opponent={opponent} difficulty={difficulty} mode={mode} />
+        <MatchSidebar game={game} opponent={opponent} difficulty={difficulty} mode={mode} connectionStatus={connectionStatus} />
       </div>
     </main>
   );
