@@ -15,7 +15,7 @@ const botProfiles = {
   nova: {
     name: 'Nova',
     reactions: {
-      opening: "Finally, somone willing to test tehmselves against the best. Don't worry. I'll try not to end this too quickly.",
+      opening: "Finally, somone willing to test themselves against the best. Don't worry. I'll try not to end this too quickly.",
       move: "Well, now. That's a bold move. Not sure if you're brilliant or reckless.",
       win: "That's game. If this was the best you had, you probably shouldn't have challenged me.",
       loss: "...Hah. Well played. A worthy opponent at last!",
