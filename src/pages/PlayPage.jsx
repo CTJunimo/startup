@@ -400,7 +400,7 @@ export default function PlayPage() {
   }, [mode, player.displayName, user]);
 
   useEffect(() => {
-    if (!['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
+    if (!user || !['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
     recordedGameId.current = game.id;
     recordMatch({
       id: game.id,

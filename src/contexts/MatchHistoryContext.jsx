@@ -6,7 +6,7 @@ const historyKey = 'tic-tac-toe-match-history';
 function readMatches() {
   try {
     const matches = JSON.parse(localStorage.getItem(historyKey) ?? '[]');
-    return Array.isArray(matches) ? matches : [];
+    return Array.isArray(matches) ? matches.filter((match) => match.email !== 'guest@local') : [];
   } catch {
     return [];
   }
@@ -29,6 +29,7 @@ export function MatchHistoryProvider({ children }) {
   }, []);
 
   function recordMatch(match) {
+    if (!match.email || match.email === 'guest@local') return;
     setMatches((currentMatches) => {
       if (currentMatches.some((item) => item.id === match.id)) return currentMatches;
       return [match, ...currentMatches].slice(0, 50);

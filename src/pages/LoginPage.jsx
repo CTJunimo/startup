@@ -18,21 +18,24 @@ function SignInForm() {
   const [mode, setMode] = useState('sign-in');
   const [error, setError] = useState('');
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
     const email = String(fields.get('email'));
     const displayName = String(fields.get('displayName')).trim();
+    const password = String(fields.get('password'));
 
     if (!displayName) {
       setError('Enter your name to continue.');
       return;
     }
 
-    if (mode === 'register') {
-      register(displayName, email);
-    } else {
-      signIn(email, displayName);
+    const result = mode === 'register'
+      ? await register(displayName, email, password)
+      : await signIn(email, displayName, password);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
     setError('');
     navigate('/bots');
@@ -81,7 +84,7 @@ function SignInForm() {
         </p>
         <div className="guest-divider"><span>or</span></div>
         <Link className="btn btn-outline-secondary w-100 guest-entry" to="/bots">Continue as guest <span aria-hidden="true">→</span></Link>
-        <p className="demo-note">Demo profile data stays in this browser. Passwords are not stored.</p>
+        <p className="demo-note">Account details stay in this browser. Passwords are stored as salted hashes.</p>
       </div>
     </div>
   );

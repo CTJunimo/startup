@@ -99,8 +99,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - Guests can play bots; sign-in gates multiplayer, match history, and profile images. Sign-in requires a player name. Signed-in clients can play synchronized two-player matches through the WebSocket server and publish completed-match summaries to the shared updates feed. Authentication is still a browser-only mock; production multiplayer requires the server and `/ws` reverse proxy described in `server/README.md`.
-- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for changes across tabs, records completed matches, and manages WebSocket matchmaking and live-feed subscriptions.
+- [x] **All functionality implemented or mocked out** - Guests can play bots without saving match history. Sign-in requires a registered account, name, and matching password; it gates multiplayer, history, and profile images. Signed-in clients can play synchronized matches and publish completed-match summaries. Authentication remains browser-local; production multiplayer needs the server and `/ws` reverse proxy in `server/README.md`.
+- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local data, listens for changes across tabs, records signed-in matches, and manages WebSocket matchmaking and live-feed subscriptions.
 
 ## 🚀 Service deliverable
 
@@ -143,4 +143,4 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 - Added an authoritative WebSocket matchmaking server, synchronized two-player turns, server-validated results, shared restart, and signed-in match announcements on the shared live-updates feed.
 - Added Vite development proxy setup and production instructions; the existing React deployment script still deploys only static files.
 - Added the author's GitHub repository link to the home screen.
-- No passwords are stored. Authentication remains a browser-local mock, so a production server must add real identity verification before treating the signed-in flag as trusted. Production multiplayer also requires a running server process and TLS reverse-proxy configuration.
+- Raw passwords are never stored. The browser-local demo stores a salted PBKDF2 hash; production authentication must verify identities on the server before trusting sign-in for access control. Guest matches are not persisted. Production multiplayer also requires a running server process and TLS reverse-proxy configuration.
