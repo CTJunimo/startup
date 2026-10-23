@@ -10,6 +10,8 @@ const winningLines = [
 ];
 
 const rooms = new Map();
+const activitySubscribers = new Set();
+const recentActivity = [];
 let waitingPlayer = null;
 
 function send(socket, message) {
@@ -18,6 +20,19 @@ function send(socket, message) {
 
 function addActivity(room, text) {
   room.activity = [...room.activity, { id: randomUUID(), text }].slice(-8);
+}
+
+function broadcastLiveUpdate(text) {
+  const update = { id: randomUUID(), text, createdAt: new Date().toISOString() };
+  recentActivity.unshift(update);
+  recentActivity.splice(8);
+  for (const socket of activitySubscribers) send(socket, { type: 'live-update', update });
+}
+
+function cleanName(value) {
+  return typeof value === 'string'
+    ? value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 28) || 'Player'
+    : 'Player';
 }
 
 function findWinner(board) {
@@ -84,9 +99,7 @@ function createRoom(firstPlayer, secondPlayer) {
 }
 
 function startMatchmaking(player) {
-  player.name = typeof player.name === 'string'
-    ? player.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 28) || 'Player'
-    : 'Player';
+  player.name = cleanName(player.name);
 
   if (waitingPlayer && waitingPlayer.socket.readyState === WebSocket.OPEN) {
     const firstPlayer = waitingPlayer;
@@ -141,6 +154,13 @@ function processMove(player, index) {
     room.turnMark = player.mark === 'X' ? 'O' : 'X';
   }
 
+  if (room.status === 'finished' && room.players.some((participant) => participant.signedIn)) {
+    const text = room.winner === 'draw'
+      ? `${room.players.map((participant) => participant.name).join(' and ')} drew an online match.`
+      : `${room.players.find((participant) => participant.mark === room.winner).name} won an online match.`;
+    broadcastLiveUpdate(text);
+  }
+
   sendState(room);
 }
 
@@ -188,7 +208,7 @@ const httpServer = createServer((request, response) => {
 const webSocketServer = new WebSocketServer({ server: httpServer, path: '/ws', maxPayload: 1024 });
 
 webSocketServer.on('connection', (socket) => {
-  const player = { socket, name: 'Player', mark: null, room: null };
+  const player = { socket, name: 'Player', mark: null, room: null, signedIn: false };
 
   socket.on('message', (data) => {
     let message;
@@ -199,8 +219,21 @@ webSocketServer.on('connection', (socket) => {
       return;
     }
 
-    if (message.type === 'join' && !player.room && waitingPlayer !== player) {
+    if (message.type === 'subscribe' && message.signedIn === true) {
+      player.signedIn = true;
+      player.name = cleanName(message.name);
+      activitySubscribers.add(socket);
+      send(socket, { type: 'live-snapshot', updates: recentActivity });
+    } else if (message.type === 'publish-match' && player.signedIn) {
+      const results = { Win: 'won', Loss: 'lost', Draw: 'drew' };
+      if (Object.hasOwn(results, message.result)) {
+        const opponent = cleanName(message.opponent);
+        const mode = message.mode === 'multiplayer' ? 'online' : 'bot';
+        broadcastLiveUpdate(`${player.name} ${results[message.result]} a ${mode} match against ${opponent}.`);
+      }
+    } else if (message.type === 'join' && !player.room && waitingPlayer !== player) {
       player.name = message.name;
+      player.signedIn = message.signedIn === true;
       startMatchmaking(player);
     } else if (message.type === 'move') {
       processMove(player, message.index);
@@ -209,8 +242,14 @@ webSocketServer.on('connection', (socket) => {
     }
   });
 
-  socket.on('close', () => disconnectPlayer(player));
-  socket.on('error', () => disconnectPlayer(player));
+  socket.on('close', () => {
+    activitySubscribers.delete(socket);
+    disconnectPlayer(player);
+  });
+  socket.on('error', () => {
+    activitySubscribers.delete(socket);
+    disconnectPlayer(player);
+  });
 });
 
 httpServer.listen(port, '0.0.0.0', () => {

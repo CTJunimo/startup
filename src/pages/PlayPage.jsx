@@ -226,7 +226,7 @@ function getStatusMessage(game, opponentName) {
   return 'In progress';
 }
 
-function MatchSidebar({ game, opponent, difficulty, mode, connectionStatus }) {
+function MatchSidebar({ game, opponent, difficulty, mode, connectionStatus, sharedActivity, userSignedIn, feedConnected }) {
   return (
     <aside className="col-lg-5 match-sidebar">
       <section className="card dialogue-panel">
@@ -248,11 +248,12 @@ function MatchSidebar({ game, opponent, difficulty, mode, connectionStatus }) {
       </section>
       <LiveUpdates
         activity={game.activity}
+        sharedActivity={sharedActivity}
         label={mode === 'multiplayer'
           ? connectionStatus === 'connected'
             ? 'ONLINE'
             : connectionStatus === 'error' || connectionStatus === 'disconnected' ? 'OFFLINE' : 'CONNECTING'
-          : 'LOCAL'}
+          : userSignedIn ? feedConnected ? 'LIVE' : 'CONNECTING' : 'LOCAL'}
       />
     </aside>
   );
@@ -267,6 +268,9 @@ export default function PlayPage() {
   const player = user ?? { email: 'guest@local', displayName: 'Guest' };
   const [connectionStatus, setConnectionStatus] = useState(mode === 'multiplayer' ? 'connecting' : 'local');
   const socketRef = useRef(null);
+  const [sharedActivity, setSharedActivity] = useState([]);
+  const [feedConnected, setFeedConnected] = useState(false);
+  const feedSocketRef = useRef(null);
   const difficulty = ['easy', 'medium', 'hard'].includes(searchParams.get('difficulty'))
     ? searchParams.get('difficulty')
     : 'medium';
@@ -275,6 +279,53 @@ export default function PlayPage() {
     ? { ...onlineOpponent, name: game.opponentName ?? 'another player' }
     : botProfile;
   const recordedGameId = useRef(null);
+  const publishedMatchIds = useRef(new Set());
+
+  useEffect(() => {
+    if (!user) {
+      setSharedActivity([]);
+      setFeedConnected(false);
+      return undefined;
+    }
+
+    let active = true;
+    const socketUrl = new URL('/ws', window.location.href);
+    socketUrl.protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(socketUrl);
+    feedSocketRef.current = socket;
+
+    socket.addEventListener('open', () => {
+      if (!active) return;
+      setFeedConnected(true);
+      socket.send(JSON.stringify({ type: 'subscribe', signedIn: true, name: player.displayName }));
+    });
+    socket.addEventListener('message', (event) => {
+      if (!active) return;
+      let message;
+      try {
+        message = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (message.type === 'live-snapshot') setSharedActivity(message.updates ?? []);
+      if (message.type === 'live-update') {
+        setSharedActivity((current) => [message.update, ...current].slice(0, 8));
+      }
+    });
+    socket.addEventListener('close', () => {
+      if (active) setFeedConnected(false);
+    });
+    socket.addEventListener('error', () => {
+      if (active) setFeedConnected(false);
+    });
+
+    return () => {
+      active = false;
+      if (feedSocketRef.current === socket) feedSocketRef.current = null;
+      socket.close();
+      setFeedConnected(false);
+    };
+  }, [player.displayName, user]);
 
   useEffect(() => {
     if (mode !== 'multiplayer') {
@@ -292,7 +343,7 @@ export default function PlayPage() {
     socket.addEventListener('open', () => {
       if (!active) return;
       setConnectionStatus('connected');
-      socket.send(JSON.stringify({ type: 'join', name: player.displayName }));
+      socket.send(JSON.stringify({ type: 'join', name: player.displayName, signedIn: Boolean(user) }));
     });
 
     socket.addEventListener('message', (event) => {
@@ -346,7 +397,7 @@ export default function PlayPage() {
       if (socketRef.current === socket) socketRef.current = null;
       socket.close();
     };
-  }, [mode, player.displayName]);
+  }, [mode, player.displayName, user]);
 
   useEffect(() => {
     if (!['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
@@ -361,6 +412,23 @@ export default function PlayPage() {
       result: game.status === 'X' ? 'Win' : game.status === 'O' ? 'Loss' : 'Draw',
     });
   }, [difficulty, game, mode, opponent.name, player.email, recordMatch]);
+
+  useEffect(() => {
+    if (!user || mode === 'multiplayer' || !feedConnected || !['X', 'O', 'draw'].includes(game.status)) return;
+    if (publishedMatchIds.current.has(game.id)) return;
+
+    const socket = feedSocketRef.current;
+    if (socket?.readyState !== WebSocket.OPEN) return;
+    publishedMatchIds.current.add(game.id);
+    socket.send(JSON.stringify({
+      type: 'publish-match',
+      signedIn: true,
+      name: player.displayName,
+      opponent: opponent.name,
+      mode,
+      result: game.status === 'X' ? 'Win' : game.status === 'O' ? 'Loss' : 'Draw',
+    }));
+  }, [feedConnected, game, mode, opponent.name, player.displayName, user]);
 
   function handleSelect(index) {
     if (mode === 'multiplayer') {
@@ -441,7 +509,16 @@ export default function PlayPage() {
             </div>
           </div>
         </section>
-        <MatchSidebar game={game} opponent={opponent} difficulty={difficulty} mode={mode} connectionStatus={connectionStatus} />
+        <MatchSidebar
+          game={game}
+          opponent={opponent}
+          difficulty={difficulty}
+          mode={mode}
+          connectionStatus={connectionStatus}
+          sharedActivity={sharedActivity}
+          userSignedIn={Boolean(user)}
+          feedConnected={feedConnected}
+        />
       </div>
     </main>
   );

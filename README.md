@@ -99,7 +99,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - The app supports optional guest/account play, three bot difficulties and personalities, per-account local match history, and real-time two-client matches through a WebSocket matchmaking server. Authentication and history remain browser-local; production multiplayer requires the server and `/ws` reverse proxy described in `server/README.md`.
+- [x] **All functionality implemented or mocked out** - Guests can play bots; sign-in gates multiplayer, match history, and profile images. Signed-in clients can play synchronized two-player matches through the WebSocket server and publish completed-match summaries to the shared updates feed. Authentication is still a browser-only mock; production multiplayer requires the server and `/ws` reverse proxy described in `server/README.md`.
 - [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for cross-tab changes, records completed matches, and manages WebSocket connections and cleanup.
 
 ## 🚀 Service deliverable
@@ -138,9 +138,9 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 ### React reactivity deliverable
 
-- Added an optional local mock account flow with registration, sign-in, sign-out, persisted player profiles, and guest access to every game route.
+- Added an optional local mock account flow with registration, sign-in, sign-out, persisted player profiles, guest bot games, and sign-in-gated multiplayer, history, and profile images.
 - Added persistent per-account match history with a clear-history action.
-- Added an authoritative WebSocket matchmaking server, synchronized two-player turns, server-validated results, shared restart, and real match activity.
+- Added an authoritative WebSocket matchmaking server, synchronized two-player turns, server-validated results, shared restart, and signed-in match announcements on the shared live-updates feed.
 - Added Vite development proxy setup and production instructions; the existing React deployment script still deploys only static files.
 - Added the author's GitHub repository link to the home screen.
-- No passwords are stored. Authentication and match history remain local mocks. Production multiplayer still requires a running server process and TLS reverse-proxy configuration.
+- No passwords are stored. Authentication remains a browser-local mock, so a production server must add real identity verification before treating the signed-in flag as trusted. Production multiplayer also requires a running server process and TLS reverse-proxy configuration.

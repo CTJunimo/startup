@@ -7,7 +7,7 @@ export default function SiteHeader() {
     { to: '/', label: user ? 'Home' : 'Sign in', end: true },
     { to: '/bots', label: 'New game' },
     { to: '/play', label: 'Game board' },
-    { to: '/scores', label: 'Match history' },
+    ...(user ? [{ to: '/scores', label: 'Match history' }] : []),
   ];
 
   return (

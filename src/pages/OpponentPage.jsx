@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import profilePlaceholder from '../../placeholder.png';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
-function GameModeOptions() {
+function GameModeOptions({ canPlayOnline }) {
   return (
     <fieldset className="choice-group">
       <legend>Game mode</legend>
@@ -11,8 +12,11 @@ function GameModeOptions() {
           <label className="form-check-label" htmlFor="bot-mode"><strong>Solo</strong><span>Play against a bot</span></label>
         </div>
         <div className="form-check mode-choice">
-          <input className="form-check-input" id="multiplayer-mode" name="mode" type="radio" value="multiplayer" />
-          <label className="form-check-label" htmlFor="multiplayer-mode"><strong>Online</strong><span>Challenge another player</span></label>
+          <input className="form-check-input" id="multiplayer-mode" name="mode" type="radio" value="multiplayer" disabled={!canPlayOnline} />
+          <label className="form-check-label" htmlFor="multiplayer-mode">
+            <strong>Online</strong>
+            <span>{canPlayOnline ? 'Challenge another player' : 'Sign in to challenge another player'}</span>
+          </label>
         </div>
       </div>
     </fieldset>
@@ -43,20 +47,31 @@ function BotSettings() {
   );
 }
 
-function PlayerCard() {
+function PlayerCard({ user }) {
   return (
     <section className="col-lg-5" aria-labelledby="profile-heading">
       <div className="card profile-panel h-100">
         <div className="card-body">
-          <p className="eyebrow">Your player card</p>
-          <h2 id="profile-heading">Ready to play?</h2>
-          <figure className="profile-figure">
-            <img src={profilePlaceholder} alt="Placeholder player profile image" />
-            <figcaption>A random image will represent your player profile.</figcaption>
-          </figure>
-          <a className="api-link" href="https://api.api-ninjas.com/v1/randomimage" target="_blank" rel="noreferrer">
-            Image source: Random Image API <span aria-hidden="true">↗</span>
-          </a>
+          {user ? (
+            <>
+              <p className="eyebrow">Your player card</p>
+              <h2 id="profile-heading">Ready to play, {user.displayName}?</h2>
+              <figure className="profile-figure">
+                <img src={profilePlaceholder} alt="Placeholder player profile image" />
+                <figcaption>Your profile image is visible while signed in.</figcaption>
+              </figure>
+              <a className="api-link" href="https://api.api-ninjas.com/v1/randomimage" target="_blank" rel="noreferrer">
+                Image source: Random Image API <span aria-hidden="true">↗</span>
+              </a>
+            </>
+          ) : (
+            <>
+              <p className="eyebrow">Player profile</p>
+              <h2 id="profile-heading">A profile image awaits</h2>
+              <p className="lead-copy">Sign in to see your player image and unlock online matches.</p>
+              <a className="btn btn-primary" href="#/">Sign in</a>
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -65,10 +80,12 @@ function PlayerCard() {
 
 export default function OpponentPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   function handleStartGame(event) {
     event.preventDefault();
     const settings = new URLSearchParams(new FormData(event.currentTarget));
+    if (!user && settings.get('mode') === 'multiplayer') settings.set('mode', 'bot');
     navigate(`/play?${settings.toString()}`);
   }
 
@@ -83,13 +100,13 @@ export default function OpponentPage() {
         <section className="col-lg-7">
           <div className="card option-panel h-100">
             <div className="card-body">
-              <GameModeOptions />
+              <GameModeOptions canPlayOnline={Boolean(user)} />
               <BotSettings />
               <button className="btn btn-primary start-button" type="submit">Start game <span aria-hidden="true">→</span></button>
             </div>
           </div>
         </section>
-        <PlayerCard />
+        <PlayerCard user={user} />
       </form>
     </main>
   );

@@ -1,12 +1,24 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
 import SiteFooter from './components/SiteFooter.jsx';
 import SiteHeader from './components/SiteHeader.jsx';
-import { AuthProvider } from './contexts/AuthContext.jsx';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { MatchHistoryProvider } from './contexts/MatchHistoryContext.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import OpponentPage from './pages/OpponentPage.jsx';
 import PlayPage from './pages/PlayPage.jsx';
+
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+  return user ? children : <Navigate to="/" replace />;
+}
+
+function PlayRoute() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get('mode') === 'multiplayer'
+    ? <ProtectedRoute><PlayPage /></ProtectedRoute>
+    : <PlayPage />;
+}
 
 export default function App() {
   return (
@@ -17,8 +29,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LoginPage />} />
             <Route path="/bots" element={<OpponentPage />} />
-            <Route path="/play" element={<PlayPage />} />
-            <Route path="/scores" element={<HistoryPage />} />
+            <Route path="/play" element={<PlayRoute />} />
+            <Route path="/scores" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <SiteFooter />

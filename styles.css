@@ -713,6 +713,24 @@ select:focus-visible {
   line-height: 1.6;
 }
 
+.activity-subheading {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.shared-activity {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.shared-activity ul {
+  margin-top: 0.6rem;
+}
+
 #turn {
   color: var(--green-dark);
   font-weight: 700;
