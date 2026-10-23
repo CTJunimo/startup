@@ -557,8 +557,7 @@ select:focus-visible {
   font-weight: 600;
 }
 
-.turn-dot,
-.live-indicator::before {
+.turn-dot {
   width: 8px;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -691,10 +690,12 @@ select:focus-visible {
   font-size: 1.2rem;
 }
 
-.live-indicator {
+.activity-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: #eef3ee;
   color: var(--green);
   font-size: 0.68rem;
   font-weight: 700;

@@ -153,7 +153,22 @@ function createNewGame() {
     board: Array(9).fill(null),
     status: 'playing',
     reaction: 'opening',
+    activity: [],
   };
+}
+
+function withActivity(game, ...messages) {
+  const events = messages.map((text, index) => ({
+    id: `${game.id}-${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
+    text,
+  }));
+  return { ...game, activity: [...game.activity, ...events].slice(-6) };
+}
+
+function moveDescription(name, mark, index) {
+  const row = Math.floor(index / 3) + 1;
+  const column = (index % 3) + 1;
+  return `${name} placed ${mark} in row ${row}, column ${column}.`;
 }
 
 function GameSquare({ value, index, onSelect, disabled }) {
@@ -223,7 +238,7 @@ function MatchSidebar({ game, opponent, difficulty, mode }) {
           </div>
         </div>
       </section>
-      <LiveUpdates />
+      <LiveUpdates activity={game.activity} simulated={mode === 'multiplayer'} />
     </aside>
   );
 }
@@ -264,11 +279,13 @@ export default function PlayPage() {
         if (currentGame.status !== 'waiting') return currentGame;
         const nextBoard = [...currentGame.board];
         const move = getBotMove(nextBoard, 'medium');
-        if (move === null) return { ...currentGame, status: 'draw', reaction: 'draw' };
+        if (move === null) return withActivity({ ...currentGame, status: 'draw', reaction: 'draw' }, "The match ended in a draw.");
         nextBoard[move] = 'O';
-        if (getWinner(nextBoard) === 'O') return { ...currentGame, board: nextBoard, status: 'O', reaction: 'win' };
-        if (nextBoard.every(Boolean)) return { ...currentGame, board: nextBoard, status: 'draw', reaction: 'draw' };
-        return { ...currentGame, board: nextBoard, status: 'playing', reaction: 'move' };
+        const nextGame = { ...currentGame, board: nextBoard };
+        const moveEvent = moveDescription(opponent.name, 'O', move);
+        if (getWinner(nextBoard) === 'O') return withActivity({ ...nextGame, status: 'O', reaction: 'win' }, moveEvent, `${opponent.name} won the match.`);
+        if (nextBoard.every(Boolean)) return withActivity({ ...nextGame, status: 'draw', reaction: 'draw' }, moveEvent, "The match ended in a draw.");
+        return withActivity({ ...nextGame, status: 'playing', reaction: 'move' }, moveEvent);
       });
     }, 850);
 
@@ -281,21 +298,25 @@ export default function PlayPage() {
 
       const playerBoard = [...currentGame.board];
       playerBoard[index] = 'X';
-      if (getWinner(playerBoard) === 'X') return { ...currentGame, board: playerBoard, status: 'X', reaction: 'loss' };
-      if (playerBoard.every(Boolean)) return { ...currentGame, board: playerBoard, status: 'draw', reaction: 'draw' };
+      const playerMove = moveDescription(player.displayName, 'X', index);
+      const afterPlayerMove = { ...currentGame, board: playerBoard };
+      if (getWinner(playerBoard) === 'X') return withActivity({ ...afterPlayerMove, status: 'X', reaction: 'loss' }, playerMove, `${player.displayName} won the match.`);
+      if (playerBoard.every(Boolean)) return withActivity({ ...afterPlayerMove, status: 'draw', reaction: 'draw' }, playerMove, "The match ended in a draw.");
 
       if (mode === 'multiplayer') {
-        return { ...currentGame, board: playerBoard, status: 'waiting', reaction: 'move' };
+        return withActivity({ ...afterPlayerMove, status: 'waiting', reaction: 'move' }, playerMove, `Waiting for ${opponent.name} to move (demo).`);
       }
 
       const botBoard = [...playerBoard];
       const botMove = getBotMove(botBoard, difficulty);
-      if (botMove === null) return { ...currentGame, board: botBoard, status: 'draw', reaction: 'draw' };
+      if (botMove === null) return withActivity({ ...afterPlayerMove, status: 'draw', reaction: 'draw' }, playerMove, "The match ended in a draw.");
       botBoard[botMove] = 'O';
+      const afterBotMove = { ...afterPlayerMove, board: botBoard };
+      const botMoveEvent = moveDescription(opponent.name, 'O', botMove);
 
-      if (getWinner(botBoard) === 'O') return { ...currentGame, board: botBoard, status: 'O', reaction: 'win' };
-      if (botBoard.every(Boolean)) return { ...currentGame, board: botBoard, status: 'draw', reaction: 'draw' };
-      return { ...currentGame, board: botBoard, status: 'playing', reaction: 'move' };
+      if (getWinner(botBoard) === 'O') return withActivity({ ...afterBotMove, status: 'O', reaction: 'win' }, playerMove, botMoveEvent, `${opponent.name} won the match.`);
+      if (botBoard.every(Boolean)) return withActivity({ ...afterBotMove, status: 'draw', reaction: 'draw' }, playerMove, botMoveEvent, "The match ended in a draw.");
+      return withActivity({ ...afterBotMove, status: 'playing', reaction: 'move' }, playerMove, botMoveEvent);
     });
   }
 
