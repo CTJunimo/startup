@@ -99,7 +99,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - The browser-only demo supports mock registration/sign-in, bot matches at three difficulties, a delayed simulated online opponent, bot dialogue, local match history, and timed activity updates. Passwords are never stored; real services and cross-device multiplayer remain future backend work.
+- [x] **All functionality implemented or mocked out** - The browser-only demo supports optional mock registration/sign-in or guest play, bot matches at three difficulties, a delayed simulated online opponent, bot dialogue, local match history, and timed activity updates. Passwords are never stored; real services and cross-device multiplayer remain future backend work.
 - [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for changes across tabs, simulates live activity, and schedules the mock online player's moves.
 
 ## 🚀 Service deliverable
@@ -138,7 +138,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 ### React reactivity deliverable
 
-- Added a local mock account flow with registration, sign-in, sign-out, persisted player profiles, and protected game routes.
+- Added an optional local mock account flow with registration, sign-in, sign-out, persisted player profiles, and guest access to every game route.
 - Added persistent per-account match history with a clear-history action.
 - Added delayed local online-opponent moves and timed activity messages to stand in for backend and WebSocket services.
 - Added the author's GitHub repository link to the home screen.

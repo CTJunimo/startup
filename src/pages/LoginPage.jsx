@@ -75,6 +75,8 @@ function SignInForm() {
             {mode === 'register' ? 'Sign in' : 'Create an account'}
           </button>
         </p>
+        <div className="guest-divider"><span>or</span></div>
+        <Link className="btn btn-outline-secondary w-100 guest-entry" to="/bots">Continue as guest <span aria-hidden="true">→</span></Link>
         <p className="demo-note">Demo account data stays in this browser. Passwords are not stored.</p>
       </div>
     </div>

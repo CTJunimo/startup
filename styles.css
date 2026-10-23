@@ -308,6 +308,27 @@ select:focus-visible {
   text-align: center;
 }
 
+.guest-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1.1rem 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.guest-divider::before,
+.guest-divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}
+
+.guest-entry {
+  text-decoration: none;
+}
+
 .text-action {
   padding: 0;
   border: 0;

@@ -44,7 +44,8 @@ function MatchTable({ matches }) {
 export default function HistoryPage() {
   const { user } = useAuth();
   const { matches, clearHistory } = useMatchHistory();
-  const userMatches = matches.filter((match) => match.email === user.email);
+  const player = user ?? { email: 'guest@local', displayName: 'Guest' };
+  const userMatches = matches.filter((match) => match.email === player.email);
 
   return (
     <main className="container-xl page-shell">
@@ -69,7 +70,7 @@ export default function HistoryPage() {
         <div className="history-panel-footer">
           <p className="data-note">Saved in this browser</p>
           {userMatches.length > 0 && (
-            <button className="text-action" type="button" onClick={() => clearHistory(user.email)}>Clear history</button>
+            <button className="text-action" type="button" onClick={() => clearHistory(player.email)}>Clear history</button>
           )}
         </div>
       </section>

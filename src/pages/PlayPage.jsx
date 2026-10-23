@@ -233,6 +233,7 @@ export default function PlayPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { recordMatch } = useMatchHistory();
+  const player = user ?? { email: 'guest@local', displayName: 'Guest' };
   const difficulty = ['easy', 'medium', 'hard'].includes(searchParams.get('difficulty'))
     ? searchParams.get('difficulty')
     : 'medium';
@@ -242,18 +243,18 @@ export default function PlayPage() {
   const recordedGameId = useRef(null);
 
   useEffect(() => {
-    if (!user || !['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
+    if (!['X', 'O', 'draw'].includes(game.status) || recordedGameId.current === game.id) return;
     recordedGameId.current = game.id;
     recordMatch({
       id: game.id,
-      email: user.email,
+      email: player.email,
       playedAt: new Date().toISOString(),
       opponent: opponent.name,
       mode,
       difficulty,
       result: game.status === 'X' ? 'Win' : game.status === 'O' ? 'Loss' : 'Draw',
     });
-  }, [difficulty, game, mode, opponent.name, recordMatch, user]);
+  }, [difficulty, game, mode, opponent.name, player.email, recordMatch]);
 
   useEffect(() => {
     if (mode !== 'multiplayer' || game.status !== 'waiting') return undefined;
@@ -308,7 +309,7 @@ export default function PlayPage() {
         <section className="col-lg-7" aria-label="Game board">
           <div className="game-stage">
             <div className="match-strip">
-              <div><span className="player-token token-x">X</span><span>{user.displayName}</span></div>
+              <div><span className="player-token token-x">X</span><span>{player.displayName}</span></div>
               <span className="versus">VS</span>
               <div><span className="player-token token-o">O</span><span>{opponent.name}</span></div>
             </div>
