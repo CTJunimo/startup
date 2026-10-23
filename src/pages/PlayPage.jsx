@@ -7,6 +7,40 @@ const winningLines = [
   [0, 4, 8], [2, 4, 6],
 ];
 
+const botProfiles = {
+
+  nova: {
+    name: 'Nova',
+    reactions: {
+      opening: "Finally, somone willing to test tehmselves against the best. Don't worry. I'll try not to end this too quickly.",
+      move: "Well, now. That's a bold move. Not sure if you're brilliant or reckless.",
+      win: "That's game. If this was the best you had, you probably shouldn't have challenged me.",
+      loss: "...Hah. Well played. A worthy opponent at last!",
+      draw: "A draw? Interesting. Looks like I'll have to take you seriously.",
+    },
+  },
+  milo: {
+    name: 'Milo',
+    reactions: {
+      opening: 'Hi! Glad we get to play! Ready to go?',
+      move: 'Nice move! This is a fun one.',
+      win: 'I won? Nice! Good game!',
+      loss: 'Haha, I walked right into that one.',
+      draw: 'Hey, not bad! We tied.',
+    },
+  },
+  sage: {
+    name: 'Sage',
+    reactions: {
+      opening: "Oh, hi! I hope you're having a nice day.",
+      move: "Oh! That's a good move. Great choice!",
+      win: "Oh! I won? I'm sorry, I didn't mean to make things difficult!",
+      loss: "Wow! You played so well! Do you want to play again?",
+      draw: "Oh, a draw! You played really well!",
+    },
+  },
+};
+
 function getWinner(board) {
   for (const [first, second, third] of winningLines) {
     if (board[first] && board[first] === board[second] && board[first] === board[third]) {
@@ -100,7 +134,7 @@ function getBotMove(board, difficulty) {
 }
 
 function createNewGame() {
-  return { board: Array(9).fill(null), status: 'playing' };
+  return { board: Array(9).fill(null), status: 'playing', reaction: 'opening' };
 }
 
 function GameSquare({ value, index, onSelect, disabled }) {
@@ -145,31 +179,23 @@ function GameBoard({ game, onSelect }) {
   );
 }
 
-function getStatusMessage(game) {
+function getStatusMessage(game, botName) {
   if (game.status === 'X') return 'You win!';
-  if (game.status === 'O') return 'Nova wins!';
+  if (game.status === 'O') return `${botName} wins!`;
   if (game.status === 'draw') return "It's a draw!";
   return 'In progress';
 }
 
-function MatchSidebar({ status, botName, difficulty }) {
-  const dialogue = status === 'X'
-    ? 'Well played! You got me this time.'
-    : status === 'O'
-      ? 'That one is mine! Want a rematch?'
-      : status === 'draw'
-        ? 'A tie! We are evenly matched.'
-        : "Let's see what you've got!";
-
+function MatchSidebar({ game, botProfile, difficulty }) {
   return (
     <aside className="col-lg-5 match-sidebar">
       <section className="card dialogue-panel">
         <div className="card-body">
-          <p className="eyebrow">{botName} says</p>
-          <p className="bot-quote">“{dialogue}”</p>
+          <p className="eyebrow">{botProfile.name} says</p>
+          <p className="bot-quote">“{botProfile.reactions[game.reaction]}”</p>
           <div className="match-status">
             <span>Match status</span>
-            <output id="result" className="status-pill" aria-live="polite">{getStatusMessage({ status })}</output>
+            <output id="result" className="status-pill" aria-live="polite">{getStatusMessage(game, botProfile.name)}</output>
           </div>
           <div className="match-status">
             <span>Difficulty</span>
@@ -196,7 +222,7 @@ export default function PlayPage() {
   const difficulty = ['easy', 'medium', 'hard'].includes(searchParams.get('difficulty'))
     ? searchParams.get('difficulty')
     : 'medium';
-  const botName = { nova: 'Nova', milo: 'Milo', sage: 'Sage' }[searchParams.get('bot')] ?? 'Nova';
+  const botProfile = botProfiles[searchParams.get('bot')] ?? botProfiles.nova;
 
   function handleSelect(index) {
     setGame((currentGame) => {
@@ -204,17 +230,17 @@ export default function PlayPage() {
 
       const playerBoard = [...currentGame.board];
       playerBoard[index] = 'X';
-      if (getWinner(playerBoard) === 'X') return { board: playerBoard, status: 'X' };
-      if (playerBoard.every(Boolean)) return { board: playerBoard, status: 'draw' };
+      if (getWinner(playerBoard) === 'X') return { board: playerBoard, status: 'X', reaction: 'loss' };
+      if (playerBoard.every(Boolean)) return { board: playerBoard, status: 'draw', reaction: 'draw' };
 
       const botBoard = [...playerBoard];
       const botMove = getBotMove(botBoard, difficulty);
-      if (botMove === null) return { board: botBoard, status: 'draw' };
+      if (botMove === null) return { board: botBoard, status: 'draw', reaction: 'draw' };
       botBoard[botMove] = 'O';
 
-      if (getWinner(botBoard) === 'O') return { board: botBoard, status: 'O' };
-      if (botBoard.every(Boolean)) return { board: botBoard, status: 'draw' };
-      return { board: botBoard, status: 'playing' };
+      if (getWinner(botBoard) === 'O') return { board: botBoard, status: 'O', reaction: 'win' };
+      if (botBoard.every(Boolean)) return { board: botBoard, status: 'draw', reaction: 'draw' };
+      return { board: botBoard, status: 'playing', reaction: 'move' };
     });
   }
 
@@ -222,7 +248,7 @@ export default function PlayPage() {
     <main className="container-xl page-shell">
       <div className="page-heading">
         <p className="eyebrow">Your match</p>
-        <h1>{game.status === 'playing' ? 'Your move.' : getStatusMessage(game)}</h1>
+        <h1>{game.status === 'playing' ? 'Your move.' : getStatusMessage(game, botProfile.name)}</h1>
       </div>
       <div className="row g-4 align-items-start">
         <section className="col-lg-7" aria-label="Game board">
@@ -230,7 +256,7 @@ export default function PlayPage() {
             <div className="match-strip">
               <div><span className="player-token token-x">X</span><span>You</span></div>
               <span className="versus">VS</span>
-              <div><span className="player-token token-o">O</span><span>Nova</span></div>
+              <div><span className="player-token token-o">O</span><span>{botProfile.name}</span></div>
             </div>
             <p className="game-prompt"><span className="turn-dot"></span><output id="turn" aria-live="polite">{game.status === 'playing' ? 'Your turn' : 'Match complete'}</output></p>
             <GameBoard game={game} onSelect={handleSelect} />
@@ -240,7 +266,7 @@ export default function PlayPage() {
             </div>
           </div>
         </section>
-        <MatchSidebar status={game.status} botName={botName} difficulty={difficulty} />
+        <MatchSidebar game={game} botProfile={botProfile} difficulty={difficulty} />
       </div>
     </main>
   );

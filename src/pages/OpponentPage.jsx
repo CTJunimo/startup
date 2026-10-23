@@ -28,7 +28,7 @@ function BotSettings() {
         <select className="form-select" id="bot" name="bot" defaultValue="nova">
           <option value="nova">Nova - bold and competitive</option>
           <option value="milo">Milo - friendly and relaxed</option>
-          <option value="sage">Sage - thoughtful strategist</option>
+          <option value="sage">Sage - nervous and eager to please</option>
         </select>
       </div>
       <div>
