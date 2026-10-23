@@ -22,11 +22,17 @@ function SignInForm() {
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
     const email = String(fields.get('email'));
+    const displayName = String(fields.get('displayName')).trim();
+
+    if (!displayName) {
+      setError('Enter your name to continue.');
+      return;
+    }
 
     if (mode === 'register') {
-      register(String(fields.get('displayName')), email);
+      register(displayName, email);
     } else {
-      signIn(email);
+      signIn(email, displayName);
     }
     setError('');
     navigate('/bots');
@@ -52,12 +58,10 @@ function SignInForm() {
         <p className="eyebrow">{mode === 'register' ? 'Create player account' : 'Player sign-in'}</p>
         <h2>{mode === 'register' ? 'Join the game' : 'Welcome back'}</h2>
         <form onSubmit={handleSubmit}>
-          {mode === 'register' && (
-            <div className="mb-3">
-              <label className="form-label" htmlFor="display-name">Player name</label>
-              <input className="form-control" id="display-name" name="displayName" type="text" autoComplete="name" maxLength={28} required />
-            </div>
-          )}
+          <div className="mb-3">
+            <label className="form-label" htmlFor="display-name">Name</label>
+            <input className="form-control" id="display-name" name="displayName" type="text" autoComplete="name" maxLength={28} required />
+          </div>
           <div className="mb-3">
             <label className="form-label" htmlFor="email">Email</label>
             <input className="form-control" id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
@@ -77,7 +81,7 @@ function SignInForm() {
         </p>
         <div className="guest-divider"><span>or</span></div>
         <Link className="btn btn-outline-secondary w-100 guest-entry" to="/bots">Continue as guest <span aria-hidden="true">→</span></Link>
-        <p className="demo-note">Demo account data stays in this browser. Passwords are not stored.</p>
+        <p className="demo-note">Demo profile data stays in this browser. Passwords are not stored.</p>
       </div>
     </div>
   );

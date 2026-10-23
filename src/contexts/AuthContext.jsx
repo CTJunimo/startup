@@ -38,20 +38,22 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('storage', syncSession);
   }, []);
 
-  function signIn(email) {
+  function signIn(email, displayName) {
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedName = displayName.trim().slice(0, 28);
     const profiles = readStoredValue(profilesKey, {});
-    const fallbackName = normalizedEmail.split('@')[0].replace(/[._-]+/g, ' ');
-    const displayName = profiles[normalizedEmail] || fallbackName || 'Player';
-    setUser({ email: normalizedEmail, displayName });
+    profiles[normalizedEmail] = normalizedName;
+    localStorage.setItem(profilesKey, JSON.stringify(profiles));
+    setUser({ email: normalizedEmail, displayName: normalizedName });
   }
 
   function register(displayName, email) {
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedName = displayName.trim().slice(0, 28);
     const profiles = readStoredValue(profilesKey, {});
-    profiles[normalizedEmail] = displayName.trim();
+    profiles[normalizedEmail] = normalizedName;
     localStorage.setItem(profilesKey, JSON.stringify(profiles));
-    setUser({ email: normalizedEmail, displayName: displayName.trim() });
+    setUser({ email: normalizedEmail, displayName: normalizedName });
   }
 
   function signOut() {

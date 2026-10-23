@@ -1,4 +1,4 @@
-# Your startup name here
+# Play Tic Tac Toe
 
 [My Notes](notes.md)
 
@@ -98,9 +98,9 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - Guests can play bots; sign-in gates multiplayer, match history, and profile images. Signed-in clients can play synchronized two-player matches through the WebSocket server and publish completed-match summaries to the shared updates feed. Authentication is still a browser-only mock; production multiplayer requires the server and `/ws` reverse proxy described in `server/README.md`.
-- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for cross-tab changes, records completed matches, and manages WebSocket connections and cleanup.
+- [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [x] **All functionality implemented or mocked out** - Guests can play bots; sign-in gates multiplayer, match history, and profile images. Sign-in requires a player name. Signed-in clients can play synchronized two-player matches through the WebSocket server and publish completed-match summaries to the shared updates feed. Authentication is still a browser-only mock; production multiplayer requires the server and `/ws` reverse proxy described in `server/README.md`.
+- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for changes across tabs, records completed matches, and manages WebSocket matchmaking and live-feed subscriptions.
 
 ## 🚀 Service deliverable
 
