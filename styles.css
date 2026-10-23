@@ -226,8 +226,12 @@ select:focus-visible {
   box-shadow: 0 6px 14px rgb(25 40 33 / 5%);
 }
 
-.mini-board span:nth-child(3n + 1) {
+.mini-board .mini-mark-x {
   color: var(--coral);
+}
+
+.mini-board .mini-mark-o {
+  color: var(--green);
 }
 
 .card,

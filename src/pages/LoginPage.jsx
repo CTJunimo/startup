@@ -5,9 +5,9 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 function MiniBoard() {
   return (
     <div className="mini-board" aria-hidden="true">
-      <span>X</span><span></span><span>O</span>
-      <span></span><span>X</span><span></span>
-      <span>O</span><span></span><span>X</span>
+      <span className="mini-mark-x">X</span><span></span><span className="mini-mark-o">O</span>
+      <span></span><span className="mini-mark-x">X</span><span></span>
+      <span className="mini-mark-o">O</span><span></span><span className="mini-mark-x">X</span>
     </div>
   );
 }
