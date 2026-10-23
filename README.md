@@ -1,4 +1,4 @@
-# Your startup name here
+# Play Tic Tac Toe
 
 [My Notes](notes.md)
 
@@ -98,7 +98,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
 - [x] **All functionality implemented or mocked out** - The browser-only demo supports optional mock registration/sign-in or guest play, bot matches at three difficulties, a delayed simulated online opponent, bot dialogue, local match history, and per-match activity. Passwords are never stored; real services and cross-device multiplayer remain future backend work.
 - [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local storage, listens for changes across tabs, simulates live activity, and schedules the mock online player's moves.
 
