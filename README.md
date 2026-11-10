@@ -106,7 +106,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
 - [x] **Node.js/Express HTTP service** - `service/index.js` provides the deployed HTTP service and WebSocket endpoint.
 - [x] **Static middleware for frontend** - Express serves the Vite build from `public`; `deployService.sh` copies `dist` into that directory.
 - [x] **Calls to third party endpoints** - The signed-in player card fetches a profile image from the Random User Generator API.
