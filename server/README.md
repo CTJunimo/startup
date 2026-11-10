@@ -1,20 +1,21 @@
-# Multiplayer Server
+# HTTP and Multiplayer Service
 
 ## Local Development
 
-Use Node.js 20 or newer. Start these in separate terminals from the startup folder:
+Use Node.js 20 or newer. Install the service dependencies once, then start the server and frontend from the startup folder in separate terminals:
 
 ```sh
+npm install --prefix service
 npm run server
 npm run dev
 ```
 
-The WebSocket service listens on port `3001`; Vite proxies `/ws` to it. Open the app in two browser tabs, choose **Online** in both, and start both matches. Players are paired in arrival order. The server assigns X/O, validates turns, broadcasts moves, determines results, and notifies the remaining player if someone disconnects.
+The Express service listens on port `3000`; Vite proxies `/api` and `/ws` to it. It serves the React bundle, provides the account and match-history APIs, and accepts WebSocket connections at `/ws`. Open the app in two browser tabs, choose **Online** in both, and start both matches. Players are paired in arrival order. The server assigns X/O, validates turns, broadcasts moves, determines results, and notifies the remaining player if someone disconnects.
 
 ## Production Setup
 
-The current `deployReact.sh` publishes only the Vite frontend. Production multiplayer also requires deploying `server/index.js` and the root package files, installing production dependencies, and running `npm run server` persistently with `PORT=3001` under a process manager.
+`deployService.sh` builds the Vite frontend, copies it to `public`, and packages `service/index.js` with its service dependencies. The process manager starts the application on port `3000` (or `PORT` if configured). The same process serves the UI and HTTP APIs and handles WebSocket upgrades.
 
-Configure the HTTPS reverse proxy for the startup hostname to forward `/ws` to `http://127.0.0.1:3001/ws` with WebSocket upgrade support. For Nginx, the location needs `proxy_http_version 1.1`, `Upgrade` and `Connection` headers, and an extended `proxy_read_timeout`. The frontend automatically uses `wss://<current-host>/ws` on HTTPS.
+Configure the HTTPS reverse proxy for the startup hostname to forward HTTP requests to the service, including `/api` and `/ws`; `/ws` must support WebSocket upgrades. The frontend automatically uses `wss://<current-host>/ws` on HTTPS.
 
-Rooms and match state are held in server memory. Restarting the server ends active matches; there is no database or reconnect/resume support yet.
+Accounts and match history are held in service memory. Restarting the service clears them and ends active matches; there is no database or reconnect/resume support yet.

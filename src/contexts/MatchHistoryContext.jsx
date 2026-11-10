@@ -1,47 +1,70 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext.jsx';
 
 const MatchHistoryContext = createContext(null);
-const historyKey = 'tic-tac-toe-match-history';
-
-function readMatches() {
-  try {
-    const matches = JSON.parse(localStorage.getItem(historyKey) ?? '[]');
-    return Array.isArray(matches) ? matches.filter((match) => match.email !== 'guest@local') : [];
-  } catch {
-    return [];
-  }
-}
 
 export function MatchHistoryProvider({ children }) {
-  const [matches, setMatches] = useState(readMatches);
+  const { user, loading: authLoading } = useAuth();
+  const [matches, setMatches] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    localStorage.setItem(historyKey, JSON.stringify(matches));
-  }, [matches]);
-
-  useEffect(() => {
-    function syncHistory(event) {
-      if (event.key === historyKey) setMatches(readMatches());
+    let active = true;
+    if (authLoading) return () => { active = false; };
+    if (!user) {
+      setMatches([]);
+      setError('');
+      return () => { active = false; };
     }
 
-    window.addEventListener('storage', syncHistory);
-    return () => window.removeEventListener('storage', syncHistory);
+    fetch('/api/matches', { credentials: 'include' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Could not load match history.');
+        return response.json();
+      })
+      .then((savedMatches) => {
+        if (active) setMatches(savedMatches);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      });
+    return () => { active = false; };
+  }, [authLoading, user]);
+
+  const recordMatch = useCallback(async (match) => {
+    if (!user) return;
+    try {
+      const response = await fetch('/api/matches', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(match),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.msg || 'Could not save this match.');
+      setMatches(result);
+      setError('');
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }, [user]);
+
+  const clearHistory = useCallback(async () => {
+    try {
+      const response = await fetch('/api/matches', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Could not clear match history.');
+      setMatches([]);
+      setError('');
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   }, []);
 
-  function recordMatch(match) {
-    if (!match.email || match.email === 'guest@local') return;
-    setMatches((currentMatches) => {
-      if (currentMatches.some((item) => item.id === match.id)) return currentMatches;
-      return [match, ...currentMatches].slice(0, 50);
-    });
-  }
-
-  function clearHistory(email) {
-    setMatches((currentMatches) => currentMatches.filter((match) => match.email !== email));
-  }
-
   return (
-    <MatchHistoryContext.Provider value={{ matches, recordMatch, clearHistory }}>
+    <MatchHistoryContext.Provider value={{ matches, recordMatch, clearHistory, error }}>
       {children}
     </MatchHistoryContext.Provider>
   );

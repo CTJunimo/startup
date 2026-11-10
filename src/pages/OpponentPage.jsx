@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import profilePlaceholder from '../../placeholder.png';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -48,6 +49,33 @@ function BotSettings() {
 }
 
 function PlayerCard({ user }) {
+  const [profileImage, setProfileImage] = useState('');
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setProfileImage('');
+      setImageError(false);
+      return undefined;
+    }
+
+    let active = true;
+    fetch('https://randomuser.me/api/?inc=picture&noinfo')
+      .then((response) => {
+        if (!response.ok) throw new Error('The profile image service is unavailable.');
+        return response.json();
+      })
+      .then((data) => {
+        const image = data.results?.[0]?.picture?.large;
+        if (!image) throw new Error('The profile image service returned no image.');
+        if (active) setProfileImage(image);
+      })
+      .catch(() => {
+        if (active) setImageError(true);
+      });
+    return () => { active = false; };
+  }, [user]);
+
   return (
     <section className="col-lg-5" aria-labelledby="profile-heading">
       <div className="card profile-panel h-100">
@@ -57,11 +85,15 @@ function PlayerCard({ user }) {
               <p className="eyebrow">Your player card</p>
               <h2 id="profile-heading">Ready to play, {user.displayName}?</h2>
               <figure className="profile-figure">
-                <img src={profilePlaceholder} alt="Placeholder player profile image" />
-                <figcaption>Your profile image is visible while signed in.</figcaption>
+                <img
+                  src={profileImage && !imageError ? profileImage : profilePlaceholder}
+                  alt="Random profile avatar"
+                  onError={() => setImageError(true)}
+                />
+                <figcaption>{imageError ? 'Profile image unavailable; showing a placeholder.' : 'A profile image from Random User Generator.'}</figcaption>
               </figure>
-              <a className="api-link" href="https://api.api-ninjas.com/v1/randomimage" target="_blank" rel="noreferrer">
-                Image source: Random Image API <span aria-hidden="true">↗</span>
+              <a className="api-link" href="https://randomuser.me/" target="_blank" rel="noreferrer">
+                Image source: Random User Generator <span aria-hidden="true">↗</span>
               </a>
             </>
           ) : (

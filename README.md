@@ -99,21 +99,23 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - Guests can play bots without saving match history. Sign-in requires a registered account, name, and matching password; it gates multiplayer, history, and profile images. Signed-in clients can play synchronized matches and publish completed-match summaries. Authentication remains browser-local; production multiplayer needs the server and `/ws` reverse proxy in `server/README.md`.
-- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` synchronizes local data, listens for changes across tabs, records signed-in matches, and manages WebSocket matchmaking and live-feed subscriptions.
+- [x] **All functionality implemented or mocked out** - Guests can play bots without saving match history. The Express service handles registration, login, logout, protected account and match-history endpoints, and BCrypt password hashing. It serves the React build, synchronizes online matches over WebSockets, and the frontend requests profile images from Random User Generator. Accounts and match history are currently kept in service memory and reset when the service restarts.
+- [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` restores the server-backed session, loads match history, and manages WebSocket matchmaking and live-feed subscriptions.
 
 ## 🚀 Service deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [ ] **Node.js/Express HTTP service** - I did not complete this part of the deliverable.
-- [ ] **Static middleware for frontend** - I did not complete this part of the deliverable.
-- [ ] **Calls to third party endpoints** - I did not complete this part of the deliverable.
-- [ ] **Backend service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Frontend calls service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Supports registration, login, logout, and restricted endpoint** - I did not complete this part of the deliverable.
-- [ ] **Uses BCrypt to hash passwords** - I did not complete this part of the deliverable.
+- [x] **Node.js/Express HTTP service** - `service/index.js` provides the deployed HTTP service and WebSocket endpoint.
+- [x] **Static middleware for frontend** - Express serves the Vite build from `public`; `deployService.sh` copies `dist` into that directory.
+- [x] **Calls to third party endpoints** - The signed-in player card fetches a profile image from the Random User Generator API.
+- [x] **Backend service endpoints** - The service provides auth, profile, and match-history routes under `/api`.
+- [x] **Frontend calls service endpoints** - React uses the authenticated API for account restoration, registration, login, logout, and match history.
+- [x] **Supports registration, login, logout, and restricted endpoint** - HttpOnly auth cookies secure `/api/auth/me`, `/api/protected`, and match-history routes.
+- [x] **Uses BCrypt to hash passwords** - The service hashes passwords with `bcryptjs` and verifies them at login.
+
+Run `npm install --prefix service` once, then run `npm run server` and `npm run dev` in separate terminals for local development. The Vite proxy forwards `/api` and `/ws` to the Express service on port 3000. The service uses in-memory accounts and match history, so data is reset when it restarts.
 
 ## 🚀 DB deliverable
 
@@ -128,19 +130,19 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Backend listens for WebSocket connection** - `server/index.js` provides an in-memory matchmaking and authoritative tic-tac-toe service on `/ws`.
+- [x] **Backend listens for WebSocket connection** - `service/index.js` provides in-memory matchmaking and authoritative tic-tac-toe service on `/ws`.
 - [x] **Frontend makes WebSocket connection** - The React game connects to `/ws`; Vite proxies this path to the local server during development.
 - [x] **Data sent over WebSocket connection** - Clients send join and move messages; the server validates turns and broadcasts room state.
 - [x] **WebSocket data displayed** - Both boards, turn indicators, results, and match activity update from server messages.
-- [ ] **Application is fully functional in production** - Two-client play is verified locally. Production requires deploying the Node process and configuring the TLS reverse proxy described in `server/README.md`.
+- [ ] **Application is fully functional in production** - The service bundle supports production static hosting, HTTP API, and WebSockets through `deployService.sh`; production deployment has not been verified.
 
 ## Modifications (README)
 
 ### React reactivity deliverable
 
-- Added an optional local mock account flow with registration, sign-in, sign-out, persisted player profiles, guest bot games, and sign-in-gated multiplayer, history, and profile images.
-- Added persistent per-account match history with a clear-history action.
+- Added server-backed registration, sign-in, sign-out, BCrypt password hashes, guest bot games, and sign-in-gated multiplayer and history.
+- Added per-account match history served by the Express service with a clear-history action.
 - Added an authoritative WebSocket matchmaking server, synchronized two-player turns, server-validated results, shared restart, and signed-in match announcements on the shared live-updates feed.
-- Added Vite development proxy setup and production instructions; the existing React deployment script still deploys only static files.
+- Added Vite development proxy setup and an Express deployment bundle matching `deployService.sh`.
 - Added the author's GitHub repository link to the home screen.
-- Raw passwords are never stored. The browser-local demo stores a salted PBKDF2 hash; production authentication must verify identities on the server before trusting sign-in for access control. Guest matches are not persisted. Production multiplayer also requires a running server process and TLS reverse-proxy configuration.
+- Raw passwords are never stored; the service uses BCrypt. Accounts and match history currently live in memory, so they are lost when the service restarts. Guest matches are not persisted.

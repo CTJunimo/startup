@@ -9,7 +9,10 @@ import OpponentPage from './pages/OpponentPage.jsx';
 import PlayPage from './pages/PlayPage.jsx';
 
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) {
+    return <main className="container-xl page-shell"><p role="status">Loading your account...</p></main>;
+  }
   return user ? children : <Navigate to="/" replace />;
 }
 

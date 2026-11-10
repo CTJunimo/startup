@@ -1,116 +1,81 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext(null);
-const sessionKey = 'tic-tac-toe-session';
-const profilesKey = 'tic-tac-toe-profiles';
-const passwordIterations = 120000;
 
-function encodeBase64(bytes) {
-  return btoa(String.fromCharCode(...new Uint8Array(bytes)));
-}
-
-function decodeBase64(value) {
-  return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
-}
-
-async function hashPassword(password, salt) {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits'],
-  );
-  const bits = await crypto.subtle.deriveBits({
-    name: 'PBKDF2',
-    salt,
-    iterations: passwordIterations,
-    hash: 'SHA-256',
-  }, key, 256);
-  return encodeBase64(bits);
-}
-
-function readStoredValue(key, fallback) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
+async function requestAuth(path, options = {}) {
+  const response = await fetch(`/api/auth/${path}`, {
+    ...options,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.msg || 'Unable to update your account. Please try again.');
   }
-}
-
-function readSession() {
-  const session = readStoredValue(sessionKey, null);
-  if (!session || typeof session.email !== 'string') return null;
-  const profiles = readStoredValue(profilesKey, {});
-  const profile = profiles[session.email];
-  if (!profile || typeof profile !== 'object' || !profile.passwordHash) return null;
-  return { email: session.email, displayName: profile.displayName };
+  return response.status === 204 ? null : response.json();
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(readSession);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(sessionKey, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(sessionKey);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    function syncSession(event) {
-      if (event.key === sessionKey) setUser(readSession());
-    }
-
-    window.addEventListener('storage', syncSession);
-    return () => window.removeEventListener('storage', syncSession);
+    let active = true;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(async (response) => {
+        if (response.status === 401) return null;
+        if (!response.ok) throw new Error('Unable to restore your account session.');
+        return response.json();
+      })
+      .then((currentUser) => {
+        if (active) setUser(currentUser);
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
   }, []);
 
-  async function signIn(email, displayName, password) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedName = displayName.trim().slice(0, 28);
-    const profiles = readStoredValue(profilesKey, {});
-    const profile = profiles[normalizedEmail];
-    if (!profile || typeof profile !== 'object' || !profile.passwordHash) {
-      return { error: 'No account exists for that email. Create an account first.' };
+  async function signIn(email, _displayName, password) {
+    try {
+      const currentUser = await requestAuth('login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      setUser(currentUser);
+      return { error: null };
+    } catch (error) {
+      return { error: error.message };
     }
-
-    const passwordHash = await hashPassword(password, decodeBase64(profile.salt));
-    if (passwordHash !== profile.passwordHash || normalizedName.toLowerCase() !== profile.displayName.toLowerCase()) {
-      return { error: 'Name, email, or password does not match this account.' };
-    }
-
-    setUser({ email: normalizedEmail, displayName: profile.displayName });
-    return { error: null };
   }
 
   async function register(displayName, email, password) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedName = displayName.trim().slice(0, 28);
-    const profiles = readStoredValue(profilesKey, {});
-    if (profiles[normalizedEmail]?.passwordHash) {
-      return { error: 'An account already exists for that email. Sign in instead.' };
+    try {
+      const currentUser = await requestAuth('create', {
+        method: 'POST',
+        body: JSON.stringify({ displayName, email, password }),
+      });
+      setUser(currentUser);
+      return { error: null };
+    } catch (error) {
+      return { error: error.message };
     }
-
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    profiles[normalizedEmail] = {
-      displayName: normalizedName,
-      salt: encodeBase64(salt),
-      passwordHash: await hashPassword(password, salt),
-    };
-    localStorage.setItem(profilesKey, JSON.stringify(profiles));
-    setUser({ email: normalizedEmail, displayName: normalizedName });
-    return { error: null };
   }
 
-  function signOut() {
-    setUser(null);
+  async function signOut() {
+    try {
+      await requestAuth('logout', { method: 'DELETE' });
+      setUser(null);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, signIn, register, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, register, signOut }}>
       {children}
     </AuthContext.Provider>
   );

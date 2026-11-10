@@ -25,7 +25,7 @@ function SignInForm() {
     const displayName = String(fields.get('displayName')).trim();
     const password = String(fields.get('password'));
 
-    if (!displayName) {
+    if (mode === 'register' && !displayName) {
       setError('Enter your name to continue.');
       return;
     }
@@ -63,7 +63,7 @@ function SignInForm() {
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label" htmlFor="display-name">Name</label>
-            <input className="form-control" id="display-name" name="displayName" type="text" autoComplete="name" maxLength={28} required />
+            <input className="form-control" id="display-name" name="displayName" type="text" autoComplete="name" maxLength={28} required={mode === 'register'} />
           </div>
           <div className="mb-3">
             <label className="form-label" htmlFor="email">Email</label>
@@ -71,7 +71,7 @@ function SignInForm() {
           </div>
           <div className="mb-4">
             <label className="form-label" htmlFor="password">Password</label>
-            <input className="form-control" id="password" name="password" type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} minLength={6} placeholder="At least 6 characters" required />
+            <input className="form-control" id="password" name="password" type="password" autoComplete={mode === 'register' ? 'new-password' : 'current-password'} minLength={mode === 'register' ? 8 : undefined} placeholder={mode === 'register' ? 'At least 8 characters' : 'Your password'} required />
           </div>
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="btn btn-primary w-100" type="submit">{mode === 'register' ? 'Create account' : 'Sign in'} <span aria-hidden="true">→</span></button>
@@ -84,7 +84,7 @@ function SignInForm() {
         </p>
         <div className="guest-divider"><span>or</span></div>
         <Link className="btn btn-outline-secondary w-100 guest-entry" to="/bots">Continue as guest <span aria-hidden="true">→</span></Link>
-        <p className="demo-note">Account details stay in this browser. Passwords are stored as salted hashes.</p>
+        <p className="demo-note">Accounts are managed by the game service. Passwords are securely hashed.</p>
       </div>
     </div>
   );
