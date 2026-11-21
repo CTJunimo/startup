@@ -125,9 +125,11 @@ Run `npm install --prefix service` once, set `MONGO_URL` in the service environm
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
+- [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
 - [x] **Stores data in MongoDB** - Per-account match history is stored in MongoDB and survives service restarts.
 - [x] **Stores credentials in MongoDB** - User records, BCrypt password hashes, and authentication tokens are stored in MongoDB.
+
+The `users` collection stores each account's unique email, display name, BCrypt password hash, and current authentication token. The `matches` collection stores each match's owner email, unique match ID, opponent, mode, difficulty, result, played time, and record time. MongoDB indexes enforce unique account emails and per-account match IDs; authentication tokens are unique when present. The service connects using the `MONGO_URL` environment variable.
 
 ## 🚀 WebSocket deliverable
 
