@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const { WebSocket, WebSocketServer } = require('ws');
+const database = require('./database');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -14,8 +15,6 @@ const authCookieName = 'token';
 const frontendPath = fs.existsSync(path.resolve(__dirname, 'public'))
   ? path.resolve(__dirname, 'public')
   : path.resolve(__dirname, '../dist');
-const users = new Map();
-const matchesByEmail = new Map();
 const rooms = new Map();
 const activitySubscribers = new Set();
 const recentActivity = [];
@@ -41,17 +40,25 @@ apiRouter.post('/auth/create', async (req, res) => {
   if (!credentials || !displayName) {
     return res.status(400).send({ msg: 'A valid name, email, and password of at least 8 characters are required' });
   }
-  if (users.has(credentials.email)) return res.status(409).send({ msg: 'An account already exists for that email' });
+  if (await database.getUserByEmail(credentials.email)) {
+    return res.status(409).send({ msg: 'An account already exists for that email' });
+  }
 
   const passwordHash = await bcrypt.hash(credentials.password, 10);
-  if (users.has(credentials.email)) return res.status(409).send({ msg: 'An account already exists for that email' });
   const user = {
     email: credentials.email,
     displayName,
     passwordHash,
     token: randomUUID(),
   };
-  users.set(user.email, user);
+  try {
+    await database.createUser(user);
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).send({ msg: 'An account already exists for that email' });
+    }
+    throw error;
+  }
   setAuthCookie(res, user.token);
   res.status(201).send(publicUser(user));
 });
@@ -60,18 +67,19 @@ apiRouter.post('/auth/login', async (req, res) => {
   const credentials = validateCredentials(req.body);
   if (!credentials) return res.status(400).send({ msg: 'A valid email and password are required' });
 
-  const user = users.get(credentials.email);
+  const user = await database.getUserByEmail(credentials.email);
   if (!user || !(await bcrypt.compare(credentials.password, user.passwordHash))) {
     return res.status(401).send({ msg: 'Email or password is incorrect' });
   }
   user.token = randomUUID();
+  await database.updateUserToken(user.email, user.token);
   setAuthCookie(res, user.token);
   res.send(publicUser(user));
 });
 
-apiRouter.delete('/auth/logout', (req, res) => {
-  const user = findUserByToken(req.cookies[authCookieName]);
-  if (user) user.token = null;
+apiRouter.delete('/auth/logout', async (req, res) => {
+  const user = await findUserByToken(req.cookies[authCookieName]);
+  if (user) await database.removeUserToken(user.email);
   res.clearCookie(authCookieName, cookieOptions());
   res.status(204).end();
 });
@@ -80,23 +88,19 @@ apiRouter.get('/auth/me', verifyAuth, (req, res) => {
   res.send(publicUser(req.user));
 });
 
-apiRouter.get('/matches', verifyAuth, (req, res) => {
-  res.send(matchesByEmail.get(req.user.email) ?? []);
+apiRouter.get('/matches', verifyAuth, async (req, res) => {
+  res.send(await database.getMatches(req.user.email));
 });
 
-apiRouter.post('/matches', verifyAuth, (req, res) => {
-  const match = validateMatch(req.body);
+apiRouter.post('/matches', verifyAuth, async (req, res) => {
+  const match = database.validateMatch(req.body);
   if (!match) return res.status(400).send({ msg: 'Invalid match details' });
 
-  const matches = matchesByEmail.get(req.user.email) ?? [];
-  if (!matches.some((existing) => existing.id === match.id)) {
-    matchesByEmail.set(req.user.email, [match, ...matches].slice(0, 50));
-  }
-  res.status(201).send(matchesByEmail.get(req.user.email));
+  res.status(201).send(await database.addMatch(req.user.email, match));
 });
 
-apiRouter.delete('/matches', verifyAuth, (req, res) => {
-  matchesByEmail.delete(req.user.email);
+apiRouter.delete('/matches', verifyAuth, async (req, res) => {
+  await database.clearMatches(req.user.email);
   res.status(204).end();
 });
 
@@ -114,7 +118,8 @@ app.use((req, res, next) => {
   });
 });
 app.use((err, _req, res, _next) => {
-  console.error(err);
+  const code = err.cause?.cause?.code ?? err.cause?.code ?? err.code ?? 'unknown';
+  console.error('Request failed:', err.name, code);
   const status = [400, 413].includes(err.status) ? err.status : 500;
   const msg = status === 413 ? 'Request body is too large' : status === 400 ? 'Invalid request body' : 'Internal server error';
   res.status(status).send({ msg });
@@ -122,10 +127,27 @@ app.use((err, _req, res, _next) => {
 
 webSocketServer.on('connection', (socket, request) => {
   const token = parseCookie(request.headers.cookie, authCookieName);
-  const signedInUser = findUserByToken(token);
-  const player = { socket, name: signedInUser?.displayName ?? 'Player', mark: null, room: null, signedIn: Boolean(signedInUser) };
+  const player = { socket, name: 'Player', mark: null, room: null, signedIn: false };
+  let authenticationReady = false;
+
+  database.getUserByToken(token)
+    .then((signedInUser) => {
+      if (socket.readyState !== WebSocket.OPEN) return;
+      player.name = signedInUser?.displayName ?? 'Player';
+      player.signedIn = Boolean(signedInUser);
+      authenticationReady = true;
+    })
+    .catch((error) => {
+      console.error('WebSocket authentication lookup failed:', error.name, error.code ?? 'unknown');
+      socket.close(1011, 'Unable to verify authentication');
+    });
 
   socket.on('message', (data) => {
+    if (!authenticationReady) {
+      send(socket, { type: 'error', message: 'Authentication is still loading.' });
+      return;
+    }
+
     let message;
     try {
       message = JSON.parse(data.toString());
@@ -163,12 +185,20 @@ webSocketServer.on('connection', (socket, request) => {
   });
 });
 
-httpServer.listen(port, '0.0.0.0', () => {
-  console.log(`Tic-tac-toe service listening on port ${port}`);
-});
+database.connect()
+  .then(() => {
+    httpServer.listen(port, '0.0.0.0', () => {
+      console.log(`Tic-tac-toe service listening on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    const code = error.cause?.cause?.code ?? error.cause?.code ?? error.code ?? 'unknown';
+    console.error('MongoDB connection failed:', error.name, code);
+    process.exitCode = 1;
+  });
 
-function verifyAuth(req, res, next) {
-  const user = findUserByToken(req.cookies[authCookieName]);
+async function verifyAuth(req, res, next) {
+  const user = await findUserByToken(req.cookies[authCookieName]);
   if (!user) return res.status(401).send({ msg: 'Unauthorized' });
   req.user = user;
   next();
@@ -184,35 +214,12 @@ function validateCredentials(body, validatePasswordLength = false) {
   return validEmail && validPassword ? { email, password } : null;
 }
 
-function validateMatch(body) {
-  if (!body || typeof body !== 'object') return null;
-  const validId = typeof body.id === 'string' && body.id.length > 0 && body.id.length <= 100;
-  const validOpponent = typeof body.opponent === 'string' && body.opponent.trim().length > 0 && body.opponent.length <= 28;
-  const validMode = body.mode === 'bot' || body.mode === 'multiplayer';
-  const validDifficulty = ['easy', 'medium', 'hard'].includes(body.difficulty);
-  const validResult = ['Win', 'Loss', 'Draw'].includes(body.result);
-  const playedAt = typeof body.playedAt === 'string' && Number.isFinite(Date.parse(body.playedAt));
-  if (!validId || !validOpponent || !validMode || !validDifficulty || !validResult || !playedAt) return null;
-  return {
-    id: body.id,
-    opponent: body.opponent.trim(),
-    mode: body.mode,
-    difficulty: body.difficulty,
-    result: body.result,
-    playedAt: new Date(body.playedAt).toISOString(),
-  };
-}
-
 function publicUser(user) {
   return { email: user.email, displayName: user.displayName };
 }
 
 function findUserByToken(token) {
-  if (!token) return null;
-  for (const user of users.values()) {
-    if (user.token === token) return user;
-  }
-  return null;
+  return database.getUserByToken(token);
 }
 
 function cookieOptions() {

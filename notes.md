@@ -3,7 +3,7 @@
 This file represents what I have learned about web programming.
 I love web programming
 
-- [My startup](https://startup.cs260.click)
+- [My startup](https://startup.playtictactoe.click)
 - [My simon](https://simon.cs260.click)
 
 ## Helpful links
@@ -29,6 +29,12 @@ Interesting things I have learned about React
 - Store only mock profile information in `localStorage`; never persist passwords in a browser-only authentication demo.
 - Use a stable match ID so an effect can safely record a completed game once, even when React re-renders.
 - Hash-based React Router routes work on static hosting without server-side route rewrites.
+
+## Database
+
+- Keep persistent users, authentication tokens, and match history in MongoDB rather than process-local maps so data and sessions survive service restarts.
+- Configure MongoDB connection strings through the `MONGO_URL` environment variable; do not commit credentials or include them in error logs.
+- Create unique indexes for account emails and per-user match IDs to preserve duplicate prevention when multiple requests arrive concurrently.
 
 ## Beginning: Pushing and Pulling
 

@@ -1,3 +1,4 @@
 simon/
 node_modules/
 dist/
+/AWS-keys.pem

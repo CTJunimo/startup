@@ -36,6 +36,10 @@ I am going to use the required technologies in the following ways.
 - **DB/Login** - The database will store user accounts, match history, bot profiles (difficulty level, personality traits, dialogue lines), and any cosmetic settings the user chooses. This lets players log in and see their past games or reuse their preferred bot.
 - **WebSocket** - WebSockets will be used for real‑time communication. This includes sending moves instantly during multiplayer games, updating the board for both players, and pushing bot reactions or dialogue messages during single‑player matches. WebSockets ensure the game feels responsive and alive, even when playing against a bot.
 
+### Database configuration
+
+The service persists accounts, authentication tokens, and match history in MongoDB. Install its dependencies with `npm install` from `service`, then set `MONGO_URL` before starting the service. `MONGODB_DB_NAME` is optional and defaults to `tictactoe`. Keep the connection URI out of source control and configure the same environment variables on the production server before deployment.
+
 ## 🚀 Specification Deliverable
 
 > [!NOTE]
@@ -54,9 +58,9 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [x] **Rented EC2 server** - I did not complete this part of the deliverable.
-- [x] **Leased domain name** - I did not complete this part of the deliverable.
-- [x] **Server accessible** from my domain: [https://playtictactoe.click](https://playtictactoe.click) - I did not complete this part of the deliverable.
+- [x] **Rented EC2 server** - The application is deployed to my EC2 instance.
+- [x] **Leased domain name** - The app is served from my configured subdomain.
+- [x] **Server accessible** from my domain: [https://startup.playtictactoe.click](https://startup.playtictactoe.click).
 
 ## 🚀 HTML deliverable
 
@@ -99,7 +103,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - Guests can play bots without saving match history. The Express service handles registration, login, logout, protected account and match-history endpoints, and BCrypt password hashing. It serves the React build, synchronizes online matches over WebSockets, and the frontend requests profile images from Random User Generator. Accounts and match history are currently kept in service memory and reset when the service restarts.
+- [x] **All functionality implemented or mocked out** - Guests can play bots without saving match history. The Express service handles registration, login, logout, protected account and match-history endpoints, and BCrypt password hashing. It serves the React build, synchronizes online matches over WebSockets, and the frontend requests profile images from Random User Generator. Accounts, authentication tokens, and match history are stored in MongoDB; active online games remain in memory.
 - [x] **Hooks** - `useState` drives account, board, and interface state. `useEffect` restores the server-backed session, loads match history, and manages WebSocket matchmaking and live-feed subscriptions.
 
 ## 🚀 Service deliverable
@@ -115,15 +119,15 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 - [x] **Supports registration, login, logout, and restricted endpoint** - HttpOnly auth cookies secure `/api/auth/me`, `/api/protected`, and match-history routes.
 - [x] **Uses BCrypt to hash passwords** - The service hashes passwords with `bcryptjs` and verifies them at login.
 
-Run `npm install --prefix service` once, then run `npm run server` and `npm run dev` in separate terminals for local development. The Vite proxy forwards `/api` and `/ws` to the Express service on port 3000. The service uses in-memory accounts and match history, so data is reset when it restarts.
+Run `npm install --prefix service` once, set `MONGO_URL` in the service environment, then run `npm run server` and `npm run dev` in separate terminals for local development. `MONGODB_DB_NAME` is optional and defaults to `tictactoe`. The Vite proxy forwards `/api` and `/ws` to the Express service on port 3000.
 
 ## 🚀 DB deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [ ] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [ ] **Stores data in MongoDB** - I did not complete this part of the deliverable.
-- [ ] **Stores credentials in MongoDB** - I did not complete this part of the deliverable.
+- [x] **Stores data in MongoDB** - Per-account match history is stored in MongoDB and survives service restarts.
+- [x] **Stores credentials in MongoDB** - User records, BCrypt password hashes, and authentication tokens are stored in MongoDB.
 
 ## 🚀 WebSocket deliverable
 
@@ -134,7 +138,7 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 - [x] **Frontend makes WebSocket connection** - The React game connects to `/ws`; Vite proxies this path to the local server during development.
 - [x] **Data sent over WebSocket connection** - Clients send join and move messages; the server validates turns and broadcasts room state.
 - [x] **WebSocket data displayed** - Both boards, turn indicators, results, and match activity update from server messages.
-- [ ] **Application is fully functional in production** - The service bundle supports production static hosting, HTTP API, and WebSockets through `deployService.sh`; production deployment has not been verified.
+- [x] **Application is fully functional in production** - The deployed app at [https://startup.playtictactoe.click](https://startup.playtictactoe.click) passed production health, authentication, MongoDB match-history, and secure WebSocket matchmaking checks.
 
 ## Modifications (README)
 
@@ -145,4 +149,4 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 - Added an authoritative WebSocket matchmaking server, synchronized two-player turns, server-validated results, shared restart, and signed-in match announcements on the shared live-updates feed.
 - Added Vite development proxy setup and an Express deployment bundle matching `deployService.sh`.
 - Added the author's GitHub repository link to the home screen.
-- Raw passwords are never stored; the service uses BCrypt. Accounts and match history currently live in memory, so they are lost when the service restarts. Guest matches are not persisted.
+- Raw passwords are never stored; the service uses BCrypt. Accounts, hashed credentials, authentication tokens, and match history persist in MongoDB. Guest matches are not persisted, and active multiplayer games remain in memory.
